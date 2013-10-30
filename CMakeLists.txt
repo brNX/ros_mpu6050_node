@@ -6,6 +6,7 @@ project(mpu_6050)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
    roscpp
+   sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,7 +75,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(mpu_6050_node src/mpu_6050_node.cpp)
+add_executable(mpu_6050_node src/MPU60X0/MPU60X0.cpp src/mpu_6050_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
