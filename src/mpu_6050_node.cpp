@@ -6,10 +6,21 @@
 #define MPU_FRAMEID "/base_mpu_6050"
 
 int main(int argc, char **argv){
-    ros::init(argc, argv, "mpu_6050");
+
+   ROS_INFO("test1...");
+
+    ros::init(argc, argv, "mpu_6050_node");
+
+    ROS_INFO("test2...");
+
 
     ros::NodeHandle pn("~");
-    ros::ServiceClient client = pn.serviceClient<i2c_ros::i2c>("i2c_operation");
+    ros::NodeHandle n;
+
+
+    ROS_DEBUG("Starting mpu_6050_node...");
+    ROS_DEBUG("setting up i2c_operation client...");
+    ros::ServiceClient client = n.serviceClient<i2c_ros::i2c>("i2c_operation");
 
     /****
      *IMU parameters
@@ -18,6 +29,8 @@ int main(int argc, char **argv){
     pn.param<int>("frequency", frequency ,20);
     //pn.param<bool>("use_compass", use_compass,true);
 
+
+    ROS_DEBUG("setting up MPU60X0...");
     MPU60X0 accelgyro(client);
 
 
@@ -36,6 +49,7 @@ int main(int argc, char **argv){
         sensor_msgs::Imu imu_msg;
         imu_msg.header.stamp = now;
         imu_msg.header.frame_id = MPU_FRAMEID;
+
 
 
 
