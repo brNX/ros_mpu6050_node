@@ -8,12 +8,14 @@ find_package(catkin REQUIRED COMPONENTS
    roscpp
    sensor_msgs
    i2c_ros
+   std_msgs
+   std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-SET(CMAKE_BUILD_TYPE Debug)
+#SET(CMAKE_BUILD_TYPE Debug)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -32,17 +34,17 @@ SET(CMAKE_BUILD_TYPE Debug)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
+#add_service_files(
 #   FILES
 #   Service1.srv
 #   Service2.srv
-# )
+#)
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
+#generate_messages(
 #   DEPENDENCIES
 #   std_msgs  # Or other packages containing msgs
-# )
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -56,7 +58,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES mpu_6050
-#  CATKIN_DEPENDS i2c_ros roscpp
+   CATKIN_DEPENDS std_msgs std_srvs
 #  DEPENDS system_lib
 )
 

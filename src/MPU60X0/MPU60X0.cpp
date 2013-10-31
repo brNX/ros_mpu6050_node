@@ -3497,8 +3497,8 @@ int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
     if (i2c_ros_client.call(srv))
     {
         //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
-        printResponse(srv.response);
+        //ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
+        //printResponse(srv.response);
     }
     else
     {
@@ -3525,12 +3525,12 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
             for(int i =0;i<numBytes;i++){
                 bytes[i]=srv.response.data[i];
             }
-            printResponse(srv.response);
+            //printResponse(srv.response);
         }else{
-            ROS_INFO("MPU6050 - %s - read response data empty", __FUNCTION__);
+            ROS_WARN("MPU6050 - %s - read response data empty", __FUNCTION__);
         }
         //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        ROS_INFO("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
+        //ROS_INFO("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
     }
     else
     {
