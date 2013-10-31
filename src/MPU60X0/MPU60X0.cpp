@@ -3456,6 +3456,9 @@ bool MPU60X0::writeWord(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint16_t 
     return writeWords(useSPI, devAddr, regAddr, 1, &data);
 }
 
+void printResponse(){
+
+}
 
 int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
 
@@ -3463,6 +3466,7 @@ int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
 
     srv.request.address=address;
     srv.request.operation=i2c_ros::i2cRequest::WRITE;
+    srv.request.size=numBytes;
     for(int i =0;i<numBytes;i++){
         srv.request.data.push_back(bytes[i]);
     }
@@ -3470,7 +3474,7 @@ int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
     if (i2c_ros_client.call(srv))
     {
         //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        ROS_DEBUG("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
+        ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
     }
     else
     {
@@ -3487,6 +3491,7 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
 
     srv.request.address=address;
     srv.request.operation=i2c_ros::i2cRequest::READ;
+    srv.request.size=numBytes;
 
     if (i2c_ros_client.call(srv))
     {
@@ -3495,10 +3500,10 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
                 bytes[i]=srv.response.data[i];
             }
         }else{
-            ROS_DEBUG("MPU6050 - %s - read response data empty", __FUNCTION__);
+            ROS_INFO("MPU6050 - %s - read response data empty", __FUNCTION__);
         }
         //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        ROS_DEBUG("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
+        ROS_INFO("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
     }
     else
     {
@@ -3507,4 +3512,6 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
     }
     return 1;
 }
+
+
 
