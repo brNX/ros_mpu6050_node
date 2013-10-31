@@ -44,7 +44,8 @@ THE SOFTWARE.
  */
 MPU60X0::MPU60X0(ros::ServiceClient & _i2c_ros_client):i2c_ros_client(_i2c_ros_client)
 {
-    //	devAddr = MPU60X0_DEFAULT_ADDRESS;
+   devAddr = MPU60X0_DEFAULT_ADDRESS;
+   bSPI = false;
 }
 
 /** Specific address constructor.
@@ -3456,7 +3457,27 @@ bool MPU60X0::writeWord(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint16_t 
     return writeWords(useSPI, devAddr, regAddr, 1, &data);
 }
 
-void printResponse(){
+void printResponse(i2c_ros::i2c::Response & resp){
+    ROS_INFO("#######message response#####");
+    ROS_INFO("OK : %d",resp.ok);
+    ROS_INFO("Data : ");
+    for(int i =0;i<resp.data.size();i++){
+        ROS_INFO("[%d]: %x",i,resp.data[i]);
+    }
+    ROS_INFO("############################");
+
+}
+
+void printRequest(i2c_ros::i2c::Request & req){
+    ROS_INFO("#######message request#####");
+    ROS_INFO("Operation : %d",req.operation);
+    ROS_INFO("Address : %x",req.address);
+    ROS_INFO("Size : %u",req.size);
+    ROS_INFO("Data : ");
+    for(int i =0;i<req.data.size();i++){
+        ROS_INFO("[%d]: %x",i,req.data[i]);
+    }
+    ROS_INFO("############################");
 
 }
 
@@ -3471,17 +3492,20 @@ int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
         srv.request.data.push_back(bytes[i]);
     }
 
+    //printRequest(srv.request);
+
     if (i2c_ros_client.call(srv))
     {
         //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
         ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
+        printResponse(srv.response);
     }
     else
     {
         ROS_ERROR("Failed to call service i2c_ros");
         return 0;
     }
-    return 1;
+    return 0;
 }
 
 
@@ -3493,12 +3517,15 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
     srv.request.operation=i2c_ros::i2cRequest::READ;
     srv.request.size=numBytes;
 
+
+    //printRequest(srv.request);
     if (i2c_ros_client.call(srv))
     {
         if(srv.response.data.size()>0){
             for(int i =0;i<numBytes;i++){
                 bytes[i]=srv.response.data[i];
             }
+            printResponse(srv.response);
         }else{
             ROS_INFO("MPU6050 - %s - read response data empty", __FUNCTION__);
         }
@@ -3510,7 +3537,7 @@ int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
         ROS_ERROR("Failed to call service i2c_ros");
         return 0;
     }
-    return 1;
+    return 0;
 }
 
 
