@@ -7,6 +7,7 @@ project(mpu_6050)
 find_package(catkin REQUIRED COMPONENTS
    roscpp
    sensor_msgs
+   i2c_ros
 )
 
 ## System dependencies are found with CMake's conventions

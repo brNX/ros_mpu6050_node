@@ -7,19 +7,14 @@
 
 int main(int argc, char **argv){
 
-   ROS_INFO("test1...");
-
     ros::init(argc, argv, "mpu_6050_node");
-
-    ROS_INFO("test2...");
-
 
     ros::NodeHandle pn("~");
     ros::NodeHandle n;
 
 
-    ROS_DEBUG("Starting mpu_6050_node...");
-    ROS_DEBUG("setting up i2c_operation client...");
+    ROS_INFO("Starting mpu_6050_node...");
+    ROS_INFO("setting up i2c_operation client...");
     ros::ServiceClient client = n.serviceClient<i2c_ros::i2c>("i2c_operation");
 
     /****
@@ -30,13 +25,13 @@ int main(int argc, char **argv){
     //pn.param<bool>("use_compass", use_compass,true);
 
 
-    ROS_DEBUG("setting up MPU60X0...");
+    ROS_INFO("setting up MPU60X0...");
     MPU60X0 accelgyro(client);
 
 
     // verify connection
-    ROS_DEBUG("Testing device connections...");
-    ROS_DEBUG(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    ROS_INFO("Testing device connections...");
+    ROS_INFO(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
 
     ros::Publisher imu_pub = pn.advertise<sensor_msgs::Imu>("imu/data", 10);
