@@ -33,6 +33,10 @@ int main(int argc, char **argv){
     ROS_INFO("Testing device connections...");
     ROS_INFO(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
+    ROS_INFO("Initialize MPU_6050...");
+    accelgyro.initialize();
+
+
 
     ros::Publisher imu_pub = pn.advertise<sensor_msgs::Imu>("imu/data", 10);
     ros::Rate r(frequency);
@@ -45,7 +49,22 @@ int main(int argc, char **argv){
         imu_msg.header.stamp = now;
         imu_msg.header.frame_id = MPU_FRAMEID;
 
+        int16_t ax, ay, az;
+        int16_t gx, gy, gz;
 
+        accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+
+        //TODO: needs conversion
+        imu_msg.linear_acceleration.x=ax;
+        imu_msg.linear_acceleration.y=ay;
+        imu_msg.linear_acceleration.z=az;
+
+        imu_msg.angular_velocity.x=gx;
+        imu_msg.angular_velocity.y=gy;
+        imu_msg.angular_velocity.z=gz;
+
+        imu_pub.publish(imu_msg);
 
 
         /*sensor_msgs::Imu imu_msg = mti->fillImuMessage(now);
