@@ -70,7 +70,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-   include  ${catkin_INCLUDE_DIRS}
+   include  ${catkin_INCLUDE_DIRS} src/linux-mpu9150/eMPL src/linux-mpu9150/mpu9150
 )
 
 ## Declare a cpp library
@@ -79,7 +79,15 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(mpu_6050_node src/MPU60X0/MPU60X0.cpp src/mpu_6050_node.cpp)
+add_executable(
+mpu_6050_node 
+src/mpu_6050/src/linux-mpu9150/mpu9150/mpu9150.c 
+src/mpu_6050/src/linux-mpu9150/mpu9150/quaternion.c
+src/mpu_6050/src/linux-mpu9150/mpu9150/vector3d.c
+src/mpu_6050/src/linux-mpu9150/eMPL/inv_mpu.c
+src/mpu_6050/src/linux-mpu9150/eMPL/inv_mpu_dmp_motion_driver.c
+src/mpu_6050_node.cpp
+)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
