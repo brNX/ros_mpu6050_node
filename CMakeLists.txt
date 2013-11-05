@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
    std_srvs
 )
 
+add_definitions( -DMPU6050 -DEMPL_TARGET_LINUX )
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -70,7 +72,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-   include  ${catkin_INCLUDE_DIRS} src/linux-mpu9150/eMPL src/linux-mpu9150/mpu9150
+   include  ${catkin_INCLUDE_DIRS} src/linux-mpu9150/glue src/linux-mpu9150/eMPL src/linux-mpu9150/mpu9150
 )
 
 ## Declare a cpp library
@@ -81,11 +83,12 @@ include_directories(
 ## Declare a cpp executable
 add_executable(
 mpu_6050_node 
-src/mpu_6050/src/linux-mpu9150/mpu9150/mpu9150.c 
-src/mpu_6050/src/linux-mpu9150/mpu9150/quaternion.c
-src/mpu_6050/src/linux-mpu9150/mpu9150/vector3d.c
-src/mpu_6050/src/linux-mpu9150/eMPL/inv_mpu.c
-src/mpu_6050/src/linux-mpu9150/eMPL/inv_mpu_dmp_motion_driver.c
+src/linux-mpu9150/glue/ros_glue.c
+src/linux-mpu9150/mpu9150/mpu9150.c
+src/linux-mpu9150/mpu9150/quaternion.c
+src/linux-mpu9150/mpu9150/vector3d.c
+src/linux-mpu9150/eMPL/inv_mpu.c
+src/linux-mpu9150/eMPL/inv_mpu_dmp_motion_driver.c
 src/mpu_6050_node.cpp
 )
 

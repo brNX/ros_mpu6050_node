@@ -102,7 +102,7 @@ static inline int reg_int_cb(struct int_param_s *int_param)
 #define labs        abs
 #define fabs(x)     (((x)>0)?(x):-(x))
 #elif defined EMPL_TARGET_LINUX
-#include "linux_glue.h"
+#include "ros_glue.h"
 #else
 #error  Gyro driver is missing the system layer implementations.
 #endif
@@ -2278,27 +2278,39 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
 #define LOAD_CHUNK  (16)
     unsigned char cur[LOAD_CHUNK], tmp[2];
 
-    if (st.chip_cfg.dmp_loaded)
+    if (st.chip_cfg.dmp_loaded){
         /* DMP should only be loaded once. */
+        printf("already programmed\n");
         return -1;
+    }
 
-    if (!firmware)
+    if (!firmware){
+        printf("no firmware\n");
         return -1;
+    }
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
+        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii])){
+            printf("write error\n");
             return -1;
-        if (mpu_read_mem(ii, this_write, cur))
+        }
+        if (mpu_read_mem(ii, this_write, cur)){
+            printf("read error\n");
             return -1;
-        if (memcmp(firmware+ii, cur, this_write))
+        }
+        if (memcmp(firmware+ii, cur, this_write)){
+            printf("not equal\n");
             return -2;
+         }
     }
 
     /* Set program start address. */
     tmp[0] = start_addr >> 8;
     tmp[1] = start_addr & 0xFF;
-    if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp))
+    if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp)){
+        printf("error set start\n");
         return -1;
+    }
 
     st.chip_cfg.dmp_loaded = 1;
     st.chip_cfg.dmp_sample_rate = sample_rate;

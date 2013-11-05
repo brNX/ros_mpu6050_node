@@ -63,8 +63,7 @@
 #define log_e       MPL_LOGE
 
 #elif defined EMPL_TARGET_LINUX
-#include "linux_glue.h"
-
+#include "ros_glue.h"
 #else
 #error  Gyro driver is missing the system layer implementations.
 #endif
