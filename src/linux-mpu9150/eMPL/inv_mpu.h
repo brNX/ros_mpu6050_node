@@ -21,6 +21,8 @@
 #ifndef _INV_MPU_H_
 #define _INV_MPU_H_
 
+#include <stdint.h>
+
 #define INV_X_GYRO      (0x40)
 #define INV_Y_GYRO      (0x20)
 #define INV_Z_GYRO      (0x10)
@@ -35,7 +37,7 @@ struct int_param_s {
     unsigned char lp_exit;
     unsigned char active_low;
 #elif defined EMPL_TARGET_UC3L0
-    unsigned long pin;
+    uint32_t pin;
     void (*cb)(volatile void*);
     void *arg;
 #elif defined EMPL_TARGET_LINUX
@@ -98,16 +100,16 @@ int mpu_configure_fifo(unsigned char sensors);
 int mpu_get_power_state(unsigned char *power_on);
 int mpu_set_sensors(unsigned char sensors);
 
-int mpu_set_accel_bias(const long *accel_bias);
+int mpu_set_accel_bias(const int32_t *accel_bias);
 
 /* Data getter/setter APIs */
-int mpu_get_gyro_reg(short *data, unsigned long *timestamp);
-int mpu_get_accel_reg(short *data, unsigned long *timestamp);
-int mpu_get_compass_reg(short *data, unsigned long *timestamp);
-int mpu_get_temperature(long *data, unsigned long *timestamp);
+int mpu_get_gyro_reg(short *data, uint32_t *timestamp);
+int mpu_get_accel_reg(short *data, uint32_t *timestamp);
+int mpu_get_compass_reg(short *data, uint32_t *timestamp);
+int mpu_get_temperature(int32_t *data, uint32_t *timestamp);
 
 int mpu_get_int_status(short *status);
-int mpu_read_fifo(short *gyro, short *accel, unsigned long *timestamp,
+int mpu_read_fifo(short *gyro, short *accel, uint32_t *timestamp,
     unsigned char *sensors, unsigned char *more);
 int mpu_read_fifo_stream(unsigned short length, unsigned char *data,
     unsigned char *more);
@@ -122,7 +124,7 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
 
 int mpu_reg_dump(void);
 int mpu_read_reg(unsigned char reg, unsigned char *data);
-int mpu_run_self_test(long *gyro, long *accel);
+int mpu_run_self_test(int32_t *gyro, int32_t *accel);
 int mpu_register_tap_cb(void (*func)(unsigned char, unsigned char));
 
 #endif  /* #ifndef _INV_MPU_H_ */

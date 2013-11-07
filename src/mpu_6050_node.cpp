@@ -22,19 +22,10 @@ int i2c_write(unsigned char slave_addr, unsigned char reg_addr,unsigned char len
 
     srv.request.address=slave_addr;
     srv.request.operation=i2c_ros::i2cRequest::WRITE;
-    srv.request.size=1;
-    srv.request.data.push_back(reg_addr);
-
-    //printRequest(srv.request);
-
-    if (!clientptr->call(srv)){
-        ROS_ERROR("Failed to call service i2c_ros");
-        return -1;
-    }
-
+    srv.request.size=length;
+    srv.request.reg=reg_addr;
 
     srv.request.size=length;
-    srv.request.data.clear();
     for(int i =0;i<length;i++){
         srv.request.data.push_back(data[i]);
     }
@@ -52,20 +43,9 @@ int i2c_read(unsigned char slave_addr, unsigned char reg_addr,unsigned char leng
     i2c_ros::i2c srv;
 
     srv.request.address=slave_addr;
-    srv.request.operation=i2c_ros::i2cRequest::WRITE;
-    srv.request.size=1;
-    srv.request.data.push_back(reg_addr);
-
-    //printRequest(srv.request);
-
-    if (!clientptr->call(srv)){
-        ROS_ERROR("Failed to call service i2c_ros");
-        return -1;
-    }
-
+    srv.request.reg=reg_addr;
     srv.request.operation=i2c_ros::i2cRequest::READ;
     srv.request.size=length;
-    srv.request.data.clear();
 
     if (clientptr->call(srv)){
 

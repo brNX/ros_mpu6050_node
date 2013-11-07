@@ -56,6 +56,11 @@ int mpu9150_init(int sample_rate, int mix_factor)
                                         0, 1, 0,
                                         0, 0, 1 };
 
+    /*if (i2c_bus < MIN_I2C_BUS || i2c_bus > MAX_I2C_BUS) {
+		printf("Invalid I2C bus %d\n", i2c_bus);
+		return -1;
+    }*/
+
 	if (sample_rate < MIN_SAMPLE_RATE || sample_rate > MAX_SAMPLE_RATE) {
 		printf("Invalid sample rate %d\n", sample_rate);
 		return -1;
@@ -68,6 +73,8 @@ int mpu9150_init(int sample_rate, int mix_factor)
 
 	yaw_mixing_factor = mix_factor;
 
+    //linux_set_i2c_bus(i2c_bus);
+
 	printf("\nInitializing IMU .");
 	fflush(stdout);
 
@@ -79,7 +86,7 @@ int mpu9150_init(int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 
-    if (mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)) {
+	if (mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)) {
 		printf("\nmpu_set_sensors() failed\n");
 		return -1;
 	}
@@ -103,10 +110,10 @@ int mpu9150_init(int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 
-    /*if (mpu_set_compass_sample_rate(sample_rate)) {
-		printf("\nmpu_set_compass_sample_rate() failed\n");
-		return -1;
-    }*/
+	//if (mpu_set_compass_sample_rate(sample_rate)) {
+	//	printf("\nmpu_set_compass_sample_rate() failed\n");
+	//	return -1;
+	//}
 
 	printf(".");
 	fflush(stdout);
@@ -166,7 +173,7 @@ void mpu9150_exit()
 void mpu9150_set_accel_cal(caldata_t *cal)
 {
 	int i;
-	long bias[3];
+	int32_t bias[3];
 
 	if (!cal) {
 		use_accel_cal = 0;
@@ -255,10 +262,10 @@ int mpu9150_read_dmp(mpudata_t *mpu)
 
 int mpu9150_read_mag(mpudata_t *mpu)
 {
-	if (mpu_get_compass_reg(mpu->rawMag, &mpu->magTimestamp) < 0) {
+	/*if (mpu_get_compass_reg(mpu->rawMag, &mpu->magTimestamp) < 0) {
 		printf("mpu_get_compass_reg() failed\n");
 		return -1;
-	}
+	}*/
 
 	return 0;
 }
@@ -295,14 +302,14 @@ int data_ready()
 void calibrate_data(mpudata_t *mpu)
 {
 	if (use_mag_cal) {
-      mpu->calibratedMag[VEC3_Y] = -(short)(((long)(mpu->rawMag[VEC3_X] - mag_cal_data.offset[VEC3_X])
-			* (long)MAG_SENSOR_RANGE) / (long)mag_cal_data.range[VEC3_X]);
+      mpu->calibratedMag[VEC3_Y] = -(short)(((int32_t)(mpu->rawMag[VEC3_X] - mag_cal_data.offset[VEC3_X])
+			* (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_X]);
 
-      mpu->calibratedMag[VEC3_X] = (short)(((long)(mpu->rawMag[VEC3_Y] - mag_cal_data.offset[VEC3_Y])
-			* (long)MAG_SENSOR_RANGE) / (long)mag_cal_data.range[VEC3_Y]);
+      mpu->calibratedMag[VEC3_X] = (short)(((int32_t)(mpu->rawMag[VEC3_Y] - mag_cal_data.offset[VEC3_Y])
+			* (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_Y]);
 
-      mpu->calibratedMag[VEC3_Z] = (short)(((long)(mpu->rawMag[VEC3_Z] - mag_cal_data.offset[VEC3_Z])
-			* (long)MAG_SENSOR_RANGE) / (long)mag_cal_data.range[VEC3_Z]);
+      mpu->calibratedMag[VEC3_Z] = (short)(((int32_t)(mpu->rawMag[VEC3_Z] - mag_cal_data.offset[VEC3_Z])
+			* (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_Z]);
 	}
 	else {
 		mpu->calibratedMag[VEC3_Y] = -mpu->rawMag[VEC3_X];
@@ -311,14 +318,14 @@ void calibrate_data(mpudata_t *mpu)
 	}
 
 	if (use_accel_cal) {
-      mpu->calibratedAccel[VEC3_X] = -(short)(((long)mpu->rawAccel[VEC3_X] * (long)ACCEL_SENSOR_RANGE)
-			/ (long)accel_cal_data.range[VEC3_X]);
+      mpu->calibratedAccel[VEC3_X] = -(short)(((int32_t)mpu->rawAccel[VEC3_X] * (int32_t)ACCEL_SENSOR_RANGE)
+			/ (int32_t)accel_cal_data.range[VEC3_X]);
 
-      mpu->calibratedAccel[VEC3_Y] = (short)(((long)mpu->rawAccel[VEC3_Y] * (long)ACCEL_SENSOR_RANGE)
-			/ (long)accel_cal_data.range[VEC3_Y]);
+      mpu->calibratedAccel[VEC3_Y] = (short)(((int32_t)mpu->rawAccel[VEC3_Y] * (int32_t)ACCEL_SENSOR_RANGE)
+			/ (int32_t)accel_cal_data.range[VEC3_Y]);
 
-      mpu->calibratedAccel[VEC3_Z] = (short)(((long)mpu->rawAccel[VEC3_Z] * (long)ACCEL_SENSOR_RANGE)
-			/ (long)accel_cal_data.range[VEC3_Z]);
+      mpu->calibratedAccel[VEC3_Z] = (short)(((int32_t)mpu->rawAccel[VEC3_Z] * (int32_t)ACCEL_SENSOR_RANGE)
+			/ (int32_t)accel_cal_data.range[VEC3_Z]);
 	}
 	else {
 		mpu->calibratedAccel[VEC3_X] = -mpu->rawAccel[VEC3_X];

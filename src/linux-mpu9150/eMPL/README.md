@@ -56,7 +56,7 @@ The changes are minor to only 3 of the files as shown by the diff below
         ***************
         *** 38,43 ****
         --- 38,45 ----
-              unsigned long pin;
+              uint32_t pin;
               void (*cb)(volatile void*);
               void *arg;
         + #elif defined EMPL_TARGET_LINUX

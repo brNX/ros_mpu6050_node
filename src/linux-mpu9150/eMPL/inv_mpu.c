@@ -29,10 +29,10 @@
  *      unsigned char length, unsigned char const *data)
  * i2c_read(unsigned char slave_addr, unsigned char reg_addr,
  *      unsigned char length, unsigned char *data)
- * delay_ms(unsigned long num_ms)
- * get_ms(unsigned long *count)
+ * delay_ms(uint32_t num_ms)
+ * get_ms(uint32_t *count)
  * reg_int_cb(void (*cb)(void), unsigned char port, unsigned char pin)
- * labs(long x)
+ * labs(int32_t x)
  * fabsf(float x)
  * min(int a, int b)
  */
@@ -248,7 +248,7 @@ struct chip_cfg_s {
     /* 1 if devices on auxiliary I2C bus appear on the primary. */
     unsigned char bypass_mode;
     /* 1 if half-sensitivity.
-     * NOTE: This doesn't belong here, but everything else in hw_s is const,
+     * NOTE: This doesn't beint32_t here, but everything else in hw_s is const,
      * and this allows us to save some precious RAM.
      */
     unsigned char accel_half;
@@ -277,8 +277,8 @@ struct chip_cfg_s {
 
 /* Information for self-test. */
 struct test_s {
-    unsigned long gyro_sens;
-    unsigned long accel_sens;
+    uint32_t gyro_sens;
+    uint32_t accel_sens;
     unsigned char reg_rate_div;
     unsigned char reg_lpf;
     unsigned char reg_gyro_fsr;
@@ -905,7 +905,7 @@ int mpu_lp_accel_mode(unsigned char rate)
  *  @param[out] timestamp   Timestamp in milliseconds. Null if not needed.
  *  @return     0 if successful.
  */
-int mpu_get_gyro_reg(short *data, unsigned long *timestamp)
+int mpu_get_gyro_reg(short *data, uint32_t *timestamp)
 {
     unsigned char tmp[6];
 
@@ -928,7 +928,7 @@ int mpu_get_gyro_reg(short *data, unsigned long *timestamp)
  *  @param[out] timestamp   Timestamp in milliseconds. Null if not needed.
  *  @return     0 if successful.
  */
-int mpu_get_accel_reg(short *data, unsigned long *timestamp)
+int mpu_get_accel_reg(short *data, uint32_t *timestamp)
 {
     unsigned char tmp[6];
 
@@ -951,7 +951,7 @@ int mpu_get_accel_reg(short *data, unsigned long *timestamp)
  *  @param[out] timestamp   Timestamp in milliseconds. Null if not needed.
  *  @return     0 if successful.
  */
-int mpu_get_temperature(long *data, unsigned long *timestamp)
+int mpu_get_temperature(int32_t *data, uint32_t *timestamp)
 {
     unsigned char tmp[2];
     short raw;
@@ -965,7 +965,7 @@ int mpu_get_temperature(long *data, unsigned long *timestamp)
     if (timestamp)
         get_ms(timestamp);
 
-    data[0] = (long)((35 + ((raw - (float)st.hw->temp_offset) / st.hw->temp_sens)) * 65536L);
+    data[0] = (int32_t)((35 + ((raw - (float)st.hw->temp_offset) / st.hw->temp_sens)) * 65536L);
     return 0;
 }
 
@@ -976,7 +976,7 @@ int mpu_get_temperature(long *data, unsigned long *timestamp)
  *  @param[in]  accel_bias  New biases.
  *  @return     0 if successful.
  */
-int mpu_set_accel_bias(const long *accel_bias)
+int mpu_set_accel_bias(const int32_t *accel_bias)
 {
     unsigned char data[6];
     short accel_hw[3];
@@ -1631,7 +1631,7 @@ int mpu_get_int_status(short *status)
  *  @param[out] more        Number of remaining packets.
  *  @return     0 if successful.
  */
-int mpu_read_fifo(short *gyro, short *accel, unsigned long *timestamp,
+int mpu_read_fifo(short *gyro, short *accel, uint32_t *timestamp,
         unsigned char *sensors, unsigned char *more)
 {
     /* Assumes maximum packet size is gyro (6) + accel (6). */
@@ -1672,7 +1672,7 @@ int mpu_read_fifo(short *gyro, short *accel, unsigned long *timestamp,
             return -2;
         }
     }
-    get_ms((unsigned long*)timestamp);
+    get_ms((uint32_t*)timestamp);
 
     if (i2c_read(st.hw->addr, st.reg->fifo_r_w, packet_size, data))
         return -1;
@@ -1858,7 +1858,7 @@ static int get_accel_prod_shift(float *st_shift)
     return 0;
 }
 
-static int accel_self_test(long *bias_regular, long *bias_st)
+static int accel_self_test(int32_t *bias_regular, int32_t *bias_st)
 {
     int jj, result = 0;
     float st_shift[3], st_shift_cust, st_shift_var;
@@ -1878,7 +1878,7 @@ static int accel_self_test(long *bias_regular, long *bias_st)
     return result;
 }
 
-static int gyro_self_test(long *bias_regular, long *bias_st)
+static int gyro_self_test(int32_t *bias_regular, int32_t *bias_st)
 {
     int jj, result = 0;
     unsigned char tmp[3];
@@ -1962,7 +1962,7 @@ AKM_restore:
 #endif
 #endif
 
-static int get_st_biases(long *gyro, long *accel, unsigned char hw_test)
+static int get_st_biases(int32_t *gyro, int32_t *accel, unsigned char hw_test)
 {
     unsigned char data[MAX_PACKET_LENGTH];
     unsigned char packet_count, ii;
@@ -2038,39 +2038,39 @@ static int get_st_biases(long *gyro, long *accel, unsigned char hw_test)
         accel_cur[0] = ((short)data[0] << 8) | data[1];
         accel_cur[1] = ((short)data[2] << 8) | data[3];
         accel_cur[2] = ((short)data[4] << 8) | data[5];
-        accel[0] += (long)accel_cur[0];
-        accel[1] += (long)accel_cur[1];
-        accel[2] += (long)accel_cur[2];
+        accel[0] += (int32_t)accel_cur[0];
+        accel[1] += (int32_t)accel_cur[1];
+        accel[2] += (int32_t)accel_cur[2];
         gyro_cur[0] = (((short)data[6] << 8) | data[7]);
         gyro_cur[1] = (((short)data[8] << 8) | data[9]);
         gyro_cur[2] = (((short)data[10] << 8) | data[11]);
-        gyro[0] += (long)gyro_cur[0];
-        gyro[1] += (long)gyro_cur[1];
-        gyro[2] += (long)gyro_cur[2];
+        gyro[0] += (int32_t)gyro_cur[0];
+        gyro[1] += (int32_t)gyro_cur[1];
+        gyro[2] += (int32_t)gyro_cur[2];
     }
 #ifdef EMPL_NO_64BIT
-    gyro[0] = (long)(((float)gyro[0]*65536.f) / test.gyro_sens / packet_count);
-    gyro[1] = (long)(((float)gyro[1]*65536.f) / test.gyro_sens / packet_count);
-    gyro[2] = (long)(((float)gyro[2]*65536.f) / test.gyro_sens / packet_count);
+    gyro[0] = (int32_t)(((float)gyro[0]*65536.f) / test.gyro_sens / packet_count);
+    gyro[1] = (int32_t)(((float)gyro[1]*65536.f) / test.gyro_sens / packet_count);
+    gyro[2] = (int32_t)(((float)gyro[2]*65536.f) / test.gyro_sens / packet_count);
     if (has_accel) {
-        accel[0] = (long)(((float)accel[0]*65536.f) / test.accel_sens /
+        accel[0] = (int32_t)(((float)accel[0]*65536.f) / test.accel_sens /
             packet_count);
-        accel[1] = (long)(((float)accel[1]*65536.f) / test.accel_sens /
+        accel[1] = (int32_t)(((float)accel[1]*65536.f) / test.accel_sens /
             packet_count);
-        accel[2] = (long)(((float)accel[2]*65536.f) / test.accel_sens /
+        accel[2] = (int32_t)(((float)accel[2]*65536.f) / test.accel_sens /
             packet_count);
         /* Don't remove gravity! */
         accel[2] -= 65536L;
     }
 #else
-    gyro[0] = (long)(((long long)gyro[0]<<16) / test.gyro_sens / packet_count);
-    gyro[1] = (long)(((long long)gyro[1]<<16) / test.gyro_sens / packet_count);
-    gyro[2] = (long)(((long long)gyro[2]<<16) / test.gyro_sens / packet_count);
-    accel[0] = (long)(((long long)accel[0]<<16) / test.accel_sens /
+    gyro[0] = (int32_t)(((int64_t)gyro[0]<<16) / test.gyro_sens / packet_count);
+    gyro[1] = (int32_t)(((int64_t)gyro[1]<<16) / test.gyro_sens / packet_count);
+    gyro[2] = (int32_t)(((int64_t)gyro[2]<<16) / test.gyro_sens / packet_count);
+    accel[0] = (int32_t)(((int64_t)accel[0]<<16) / test.accel_sens /
         packet_count);
-    accel[1] = (long)(((long long)accel[1]<<16) / test.accel_sens /
+    accel[1] = (int32_t)(((int64_t)accel[1]<<16) / test.accel_sens /
         packet_count);
-    accel[2] = (long)(((long long)accel[2]<<16) / test.accel_sens /
+    accel[2] = (int32_t)(((int64_t)accel[2]<<16) / test.accel_sens /
         packet_count);
     /* Don't remove gravity! */
     if (accel[2] > 0L)
@@ -2102,11 +2102,11 @@ static int get_st_biases(long *gyro, long *accel, unsigned char hw_test)
  *  @param[out] accel       Accel biases (if applicable) in q16 format.
  *  @return     Result mask (see above).
  */
-int mpu_run_self_test(long *gyro, long *accel)
+int mpu_run_self_test(int32_t *gyro, int32_t *accel)
 {
 #ifdef MPU6050
     const unsigned char tries = 2;
-    long gyro_st[3], accel_st[3];
+    int32_t gyro_st[3], accel_st[3];
     unsigned char accel_result, gyro_result;
 #ifdef AK89xx_SECONDARY
     unsigned char compass_result;
@@ -2278,39 +2278,27 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
 #define LOAD_CHUNK  (16)
     unsigned char cur[LOAD_CHUNK], tmp[2];
 
-    if (st.chip_cfg.dmp_loaded){
+    if (st.chip_cfg.dmp_loaded)
         /* DMP should only be loaded once. */
-        printf("already programmed\n");
         return -1;
-    }
 
-    if (!firmware){
-        printf("no firmware\n");
+    if (!firmware)
         return -1;
-    }
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii])){
-            printf("write error\n");
+        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
             return -1;
-        }
-        if (mpu_read_mem(ii, this_write, cur)){
-            printf("read error\n");
+        if (mpu_read_mem(ii, this_write, cur))
             return -1;
-        }
-        if (memcmp(firmware+ii, cur, this_write)){
-            printf("not equal\n");
+        if (memcmp(firmware+ii, cur, this_write))
             return -2;
-         }
     }
 
     /* Set program start address. */
     tmp[0] = start_addr >> 8;
     tmp[1] = start_addr & 0xFF;
-    if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp)){
-        printf("error set start\n");
+    if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp))
         return -1;
-    }
 
     st.chip_cfg.dmp_loaded = 1;
     st.chip_cfg.dmp_sample_rate = sample_rate;
@@ -2405,9 +2393,9 @@ static int setup_compass(void)
     /* Get sensitivity adjustment data from fuse ROM. */
     if (i2c_read(st.chip_cfg.compass_addr, AKM_REG_ASAX, 3, data))
         return -1;
-    st.chip_cfg.mag_sens_adj[0] = (long)data[0] + 128;
-    st.chip_cfg.mag_sens_adj[1] = (long)data[1] + 128;
-    st.chip_cfg.mag_sens_adj[2] = (long)data[2] + 128;
+    st.chip_cfg.mag_sens_adj[0] = (int32_t)data[0] + 128;
+    st.chip_cfg.mag_sens_adj[1] = (int32_t)data[1] + 128;
+    st.chip_cfg.mag_sens_adj[2] = (int32_t)data[2] + 128;
 
     data[0] = AKM_POWER_DOWN;
     if (i2c_write(st.chip_cfg.compass_addr, AKM_REG_CNTL, 1, data))
@@ -2480,7 +2468,7 @@ static int setup_compass(void)
  *  @param[out] timestamp   Timestamp in milliseconds. Null if not needed.
  *  @return     0 if successful.
  */
-int mpu_get_compass_reg(short *data, unsigned long *timestamp)
+int mpu_get_compass_reg(short *data, uint32_t *timestamp)
 {
 #ifdef AK89xx_SECONDARY
     unsigned char tmp[9];
@@ -2516,9 +2504,9 @@ int mpu_get_compass_reg(short *data, unsigned long *timestamp)
     data[1] = (tmp[4] << 8) | tmp[3];
     data[2] = (tmp[6] << 8) | tmp[5];
 
-    data[0] = ((long)data[0] * st.chip_cfg.mag_sens_adj[0]) >> 8;
-    data[1] = ((long)data[1] * st.chip_cfg.mag_sens_adj[1]) >> 8;
-    data[2] = ((long)data[2] * st.chip_cfg.mag_sens_adj[2]) >> 8;
+    data[0] = ((int32_t)data[0] * st.chip_cfg.mag_sens_adj[0]) >> 8;
+    data[1] = ((int32_t)data[1] * st.chip_cfg.mag_sens_adj[1]) >> 8;
+    data[2] = ((int32_t)data[2] * st.chip_cfg.mag_sens_adj[2]) >> 8;
 
     if (timestamp)
         get_ms(timestamp);

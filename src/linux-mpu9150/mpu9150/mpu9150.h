@@ -48,11 +48,11 @@ typedef struct {
 typedef struct {
 	short rawGyro[3];
 	short rawAccel[3];
-	long rawQuat[4];
-	unsigned long dmpTimestamp;
+	int32_t rawQuat[4];
+	uint32_t dmpTimestamp;
 
 	short rawMag[3];
-	unsigned long magTimestamp;
+	uint32_t magTimestamp;
 
 	short calibratedAccel[3];
 	short calibratedMag[3];

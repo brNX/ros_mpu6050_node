@@ -29,8 +29,8 @@
  *      unsigned char length, unsigned char const *data)
  * i2c_read(unsigned char slave_addr, unsigned char reg_addr,
  *      unsigned char length, unsigned char *data)
- * delay_ms(unsigned long num_ms)
- * get_ms(unsigned long *count)
+ * delay_ms(uint32_t num_ms)
+ * get_ms(uint32_t *count)
  */
 #if defined MOTION_DRIVER_TARGET_MSP430
 #include "msp430.h"
@@ -64,6 +64,7 @@
 
 #elif defined EMPL_TARGET_LINUX
 #include "ros_glue.h"
+
 #else
 #error  Gyro driver is missing the system layer implementations.
 #endif
@@ -567,9 +568,9 @@ int dmp_set_orientation(unsigned short orient)
  *  @param[in]  bias    Gyro biases in q16.
  *  @return     0 if successful.
  */
-int dmp_set_gyro_bias(long *bias)
+int dmp_set_gyro_bias(int32_t *bias)
 {
-    long gyro_bias_body[3];
+    int32_t gyro_bias_body[3];
     unsigned char regs[4];
 
     gyro_bias_body[0] = bias[dmp.orient & 3];
@@ -583,13 +584,13 @@ int dmp_set_gyro_bias(long *bias)
         gyro_bias_body[2] *= -1;
 
 #ifdef EMPL_NO_64BIT
-    gyro_bias_body[0] = (long)(((float)gyro_bias_body[0] * GYRO_SF) / 1073741824.f);
-    gyro_bias_body[1] = (long)(((float)gyro_bias_body[1] * GYRO_SF) / 1073741824.f);
-    gyro_bias_body[2] = (long)(((float)gyro_bias_body[2] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[0] = (int32_t)(((float)gyro_bias_body[0] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[1] = (int32_t)(((float)gyro_bias_body[1] * GYRO_SF) / 1073741824.f);
+    gyro_bias_body[2] = (int32_t)(((float)gyro_bias_body[2] * GYRO_SF) / 1073741824.f);
 #else
-    gyro_bias_body[0] = (long)(((long long)gyro_bias_body[0] * GYRO_SF) >> 30);
-    gyro_bias_body[1] = (long)(((long long)gyro_bias_body[1] * GYRO_SF) >> 30);
-    gyro_bias_body[2] = (long)(((long long)gyro_bias_body[2] * GYRO_SF) >> 30);
+    gyro_bias_body[0] = (int32_t)(((int64_t)gyro_bias_body[0] * GYRO_SF) >> 30);
+    gyro_bias_body[1] = (int32_t)(((int64_t)gyro_bias_body[1] * GYRO_SF) >> 30);
+    gyro_bias_body[2] = (int32_t)(((int64_t)gyro_bias_body[2] * GYRO_SF) >> 30);
 #endif
 
     regs[0] = (unsigned char)((gyro_bias_body[0] >> 24) & 0xFF);
@@ -619,15 +620,15 @@ int dmp_set_gyro_bias(long *bias)
  *  @param[in]  bias    Accel biases in q16.
  *  @return     0 if successful.
  */
-int dmp_set_accel_bias(long *bias)
+int dmp_set_accel_bias(int32_t *bias)
 {
-    long accel_bias_body[3];
+    int32_t accel_bias_body[3];
     unsigned char regs[12];
-    long long accel_sf;
+    int64_t accel_sf;
     unsigned short accel_sens;
 
     mpu_get_accel_sens(&accel_sens);
-    accel_sf = (long long)accel_sens << 15;
+    accel_sf = (int64_t)accel_sens << 15;
     __no_operation();
 
     accel_bias_body[0] = bias[dmp.orient & 3];
@@ -641,13 +642,13 @@ int dmp_set_accel_bias(long *bias)
         accel_bias_body[2] *= -1;
 
 #ifdef EMPL_NO_64BIT
-    accel_bias_body[0] = (long)(((float)accel_bias_body[0] * accel_sf) / 1073741824.f);
-    accel_bias_body[1] = (long)(((float)accel_bias_body[1] * accel_sf) / 1073741824.f);
-    accel_bias_body[2] = (long)(((float)accel_bias_body[2] * accel_sf) / 1073741824.f);
+    accel_bias_body[0] = (int32_t)(((float)accel_bias_body[0] * accel_sf) / 1073741824.f);
+    accel_bias_body[1] = (int32_t)(((float)accel_bias_body[1] * accel_sf) / 1073741824.f);
+    accel_bias_body[2] = (int32_t)(((float)accel_bias_body[2] * accel_sf) / 1073741824.f);
 #else
-    accel_bias_body[0] = (long)(((long long)accel_bias_body[0] * accel_sf) >> 30);
-    accel_bias_body[1] = (long)(((long long)accel_bias_body[1] * accel_sf) >> 30);
-    accel_bias_body[2] = (long)(((long long)accel_bias_body[2] * accel_sf) >> 30);
+    accel_bias_body[0] = (int32_t)(((int64_t)accel_bias_body[0] * accel_sf) >> 30);
+    accel_bias_body[1] = (int32_t)(((int64_t)accel_bias_body[1] * accel_sf) >> 30);
+    accel_bias_body[2] = (int32_t)(((int64_t)accel_bias_body[2] * accel_sf) >> 30);
 #endif
 
     regs[0] = (unsigned char)((accel_bias_body[0] >> 24) & 0xFF);
@@ -845,14 +846,14 @@ int dmp_set_tap_time_multi(unsigned short time)
  *  @param[in]  thresh  Gyro threshold in dps.
  *  @return     0 if successful.
  */
-int dmp_set_shake_reject_thresh(long sf, unsigned short thresh)
+int dmp_set_shake_reject_thresh(int32_t sf, unsigned short thresh)
 {
     unsigned char tmp[4];
-    long thresh_scaled = sf / 1000 * thresh;
-    tmp[0] = (unsigned char)(((long)thresh_scaled >> 24) & 0xFF);
-    tmp[1] = (unsigned char)(((long)thresh_scaled >> 16) & 0xFF);
-    tmp[2] = (unsigned char)(((long)thresh_scaled >> 8) & 0xFF);
-    tmp[3] = (unsigned char)((long)thresh_scaled & 0xFF);
+    int32_t thresh_scaled = sf / 1000 * thresh;
+    tmp[0] = (unsigned char)(((int32_t)thresh_scaled >> 24) & 0xFF);
+    tmp[1] = (unsigned char)(((int32_t)thresh_scaled >> 16) & 0xFF);
+    tmp[2] = (unsigned char)(((int32_t)thresh_scaled >> 8) & 0xFF);
+    tmp[3] = (unsigned char)((int32_t)thresh_scaled & 0xFF);
     return mpu_write_mem(D_1_92, 4, tmp);
 }
 
@@ -897,7 +898,7 @@ int dmp_set_shake_reject_timeout(unsigned short time)
  *  @param[out] count   Number of steps detected.
  *  @return     0 if successful.
  */
-int dmp_get_pedometer_step_count(unsigned long *count)
+int dmp_get_pedometer_step_count(uint32_t *count)
 {
     unsigned char tmp[4];
     if (!count)
@@ -906,8 +907,8 @@ int dmp_get_pedometer_step_count(unsigned long *count)
     if (mpu_read_mem(D_PEDSTD_STEPCTR, 4, tmp))
         return -1;
 
-    count[0] = ((unsigned long)tmp[0] << 24) | ((unsigned long)tmp[1] << 16) |
-        ((unsigned long)tmp[2] << 8) | tmp[3];
+    count[0] = ((uint32_t)tmp[0] << 24) | ((uint32_t)tmp[1] << 16) |
+        ((uint32_t)tmp[2] << 8) | tmp[3];
     return 0;
 }
 
@@ -918,7 +919,7 @@ int dmp_get_pedometer_step_count(unsigned long *count)
  *  @param[in]  count   New step count.
  *  @return     0 if successful.
  */
-int dmp_set_pedometer_step_count(unsigned long count)
+int dmp_set_pedometer_step_count(uint32_t count)
 {
     unsigned char tmp[4];
 
@@ -934,7 +935,7 @@ int dmp_set_pedometer_step_count(unsigned long count)
  *  @param[in]  time    Walk time in milliseconds.
  *  @return     0 if successful.
  */
-int dmp_get_pedometer_walk_time(unsigned long *time)
+int dmp_get_pedometer_walk_time(uint32_t *time)
 {
     unsigned char tmp[4];
     if (!time)
@@ -943,8 +944,8 @@ int dmp_get_pedometer_walk_time(unsigned long *time)
     if (mpu_read_mem(D_PEDSTD_TIMECTR, 4, tmp))
         return -1;
 
-    time[0] = (((unsigned long)tmp[0] << 24) | ((unsigned long)tmp[1] << 16) |
-        ((unsigned long)tmp[2] << 8) | tmp[3]) * 20;
+    time[0] = (((uint32_t)tmp[0] << 24) | ((uint32_t)tmp[1] << 16) |
+        ((uint32_t)tmp[2] << 8) | tmp[3]) * 20;
     return 0;
 }
 
@@ -954,7 +955,7 @@ int dmp_get_pedometer_walk_time(unsigned long *time)
  *  a race condition if called while the pedometer is enabled.
  *  @param[in]  time    New walk time in milliseconds.
  */
-int dmp_set_pedometer_walk_time(unsigned long time)
+int dmp_set_pedometer_walk_time(uint32_t time)
 {
     unsigned char tmp[4];
 
@@ -1255,8 +1256,8 @@ int dmp_set_interrupt_mode(unsigned char mode)
  *  @param[out] more        Number of remaining packets.
  *  @return     0 if successful.
  */
-int dmp_read_fifo(short *gyro, short *accel, long *quat,
-    unsigned long *timestamp, short *sensors, unsigned char *more)
+int dmp_read_fifo(short *gyro, short *accel, int32_t *quat,
+    uint32_t *timestamp, short *sensors, unsigned char *more)
 {
     unsigned char fifo_data[MAX_PACKET_LENGTH];
     unsigned char ii = 0;
@@ -1273,16 +1274,16 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
     /* Parse DMP packet. */
     if (dmp.feature_mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT)) {
 #ifdef FIFO_CORRUPTION_CHECK
-        long quat_q14[4], quat_mag_sq;
+        int32_t quat_q14[4], quat_mag_sq;
 #endif
-        quat[0] = ((long)fifo_data[0] << 24) | ((long)fifo_data[1] << 16) |
-            ((long)fifo_data[2] << 8) | fifo_data[3];
-        quat[1] = ((long)fifo_data[4] << 24) | ((long)fifo_data[5] << 16) |
-            ((long)fifo_data[6] << 8) | fifo_data[7];
-        quat[2] = ((long)fifo_data[8] << 24) | ((long)fifo_data[9] << 16) |
-            ((long)fifo_data[10] << 8) | fifo_data[11];
-        quat[3] = ((long)fifo_data[12] << 24) | ((long)fifo_data[13] << 16) |
-            ((long)fifo_data[14] << 8) | fifo_data[15];
+        quat[0] = ((int32_t)fifo_data[0] << 24) | ((int32_t)fifo_data[1] << 16) |
+            ((int32_t)fifo_data[2] << 8) | fifo_data[3];
+        quat[1] = ((int32_t)fifo_data[4] << 24) | ((int32_t)fifo_data[5] << 16) |
+            ((int32_t)fifo_data[6] << 8) | fifo_data[7];
+        quat[2] = ((int32_t)fifo_data[8] << 24) | ((int32_t)fifo_data[9] << 16) |
+            ((int32_t)fifo_data[10] << 8) | fifo_data[11];
+        quat[3] = ((int32_t)fifo_data[12] << 24) | ((int32_t)fifo_data[13] << 16) |
+            ((int32_t)fifo_data[14] << 8) | fifo_data[15];
         ii += 16;
 #ifdef FIFO_CORRUPTION_CHECK
         /* We can detect a corrupted FIFO by monitoring the quaternion data and
@@ -1290,7 +1291,7 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
          * shouldn't happen in normal operation, but if an I2C error occurs,
          * the FIFO reads might become misaligned.
          *
-         * Let's start by scaling down the quaternion data to avoid long long
+         * Let's start by scaling down the quaternion data to avoid int64_t
          * math.
          */
         quat_q14[0] = quat[0] >> 16;
