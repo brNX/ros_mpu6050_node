@@ -134,12 +134,13 @@ int main(int argc, char **argv){
 
     ROS_INFO("setting up MPU60X0...");
 
+    //TODO:  change this to a parameter to use compass
     int yaw_mix_factor = DEFAULT_YAW_MIX_FACTOR;
     mpudata_t mpu;
 
-    mpu9150_set_debug(1);
+    //mpu9150_set_debug(1);
     ROS_INFO("Initialize MPU_6050...");
-    if (mpu9150_init(sample_rate, yaw_mix_factor)){
+    if (mpu9150_init(sample_rate, 0)){
         ROS_FATAL("MPU6050 - %s - MPU6050 connection failed",__FUNCTION__);
         ROS_BREAK();
     }
@@ -177,9 +178,12 @@ int main(int argc, char **argv){
              imu_msg.orientation.z=mpu.fusedQuat[QUAT_Z];
              imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];
 
-             imu_msg.linear_acceleration.x=mpu.rawAccel[0];
-             imu_msg.linear_acceleration.y=mpu.rawAccel[1];
-             imu_msg.linear_acceleration.z=mpu.rawAccel[2];
+
+             //TODO: needs conversion
+
+             imu_msg.linear_acceleration.x=mpu.calibratedAccel[0];
+             imu_msg.linear_acceleration.y=mpu.calibratedAccel[1];
+             imu_msg.linear_acceleration.z=mpu.calibratedAccel[2];
 
              imu_msg.angular_velocity.x=mpu.rawGyro[0];
              imu_msg.angular_velocity.y=mpu.rawGyro[1];
