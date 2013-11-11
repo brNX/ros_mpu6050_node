@@ -119,7 +119,7 @@ int main(int argc, char **argv){
 
     ROS_INFO("Starting mpu_6050_node...");
     ROS_INFO("setting up i2c_operation client...");
-    ros::ServiceClient client = n.serviceClient<i2c_ros::i2c>("i2c_operation");
+    ros::ServiceClient client = n.serviceClient<i2c_ros::i2c>("/i2c_ros/i2c_operation");
     clientptr = &client;
 
 
