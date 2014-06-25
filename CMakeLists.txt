@@ -78,7 +78,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(mpu_6050_node src/i2ckernel.cpp src/MPU60X0/MPU60X0.cpp src/mpu_6050_node.cpp)
+add_executable(mpu_6050_node src/i2ckernel.cpp src/HMC58X3/HMC58X3.cpp src/MPU60X0/MPU60X0.cpp src/mpu_6050_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
