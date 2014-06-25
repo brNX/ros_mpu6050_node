@@ -7,7 +7,7 @@
 #include "HMC58X3/HMC58X3.h"
 #include "i2ckernel.h"
 
-#define MPU_FRAMEID "/base_imu"
+#define MPU_FRAMEID "/mpu_6050"
 
 MPU60X0 * accelgyro;
 bool calibrate;
@@ -55,15 +55,13 @@ bool calibrate_gyro(std_srvs::Empty::Request &req, std_srvs::Empty::Response &re
 
 int main(int argc, char **argv){
 
-    ros::init(argc, argv, "mpu_6050_node");
+    ros::init(argc, argv, "mpu_6050");
 
     ros::NodeHandle pn("~");
     ros::NodeHandle n;
 
 
-    ROS_INFO("Starting mpu_6050_node...");
-
-
+    ROS_INFO("Starting mpu_6050...");
 
 
     /****
@@ -105,7 +103,7 @@ int main(int argc, char **argv){
         // init HMC5843
         magn.init(false); // Don't set mode yet, we'll do that later on.
         // Calibrate HMC using self test, not recommended to change the gain after calibration.
-        magn.calibrate(1); // Use gain 1=default, valid 0-7, 7 not recommended.
+        magn.calibrate(1,32); // Use gain 1=default, valid 0-7, 7 not recommended.
         // Single mode conversion was used in calibration, now set continuous mode
         magn.setMode(0);
         ros::Duration(0.010).sleep();
@@ -118,9 +116,9 @@ int main(int argc, char **argv){
         zeroGyro();
     }
 
-    ros::Publisher imu_pub = pn.advertise<sensor_msgs::Imu>("imu/data", 10);
-    ros::Publisher mag_pub = pn.advertise<geometry_msgs::Vector3Stamped>("imu/mag", 10);
-    imu_calib_pub = pn.advertise<std_msgs::Bool>("imu/is_calibrated", 10 , true);
+    ros::Publisher imu_pub = pn.advertise<sensor_msgs::Imu>("data", 10);
+    ros::Publisher mag_pub = pn.advertise<geometry_msgs::Vector3Stamped>("mag", 10);
+    imu_calib_pub = pn.advertise<std_msgs::Bool>("is_calibrated", 10 , true);
 
     //publish calibration status
     std_msgs::Bool calibrated;
@@ -128,7 +126,7 @@ int main(int argc, char **argv){
     imu_calib_pub.publish(calibrated);
 
     //calibration service
-    ros::ServiceServer service = pn.advertiseService("imu/calibrate", calibrate_gyro);
+    ros::ServiceServer service = pn.advertiseService("calibrate", calibrate_gyro);
 
 
     ros::Rate r(frequency);
@@ -148,7 +146,7 @@ int main(int argc, char **argv){
 
         int16_t ax, ay, az;
         int16_t gx, gy, gz;
-        int16_t mx, my, mz;
+        float mx, my, mz;
 
         accelgyro->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
@@ -195,7 +193,7 @@ int main(int argc, char **argv){
 
 
         //TODO: raw values for now , change this to correct value
-        mag_msg.vector.x=mx;
+        mag_msg.vector.x=mx; // divide by 10000000.0; //miligauss to Tesla ?
         mag_msg.vector.y=my;
         mag_msg.vector.z=mz;
 

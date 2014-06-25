@@ -206,7 +206,7 @@ bool HMC58X3::calibrate(unsigned char gain, unsigned int n_samples)
             {
                 setMode(1);
                 getRaw(&xyz[0],&xyz[1],&xyz[2]);   // Get the raw values in case the scales have already been changed.
-                ROS_INFO("%d %d %d \n", xyz[0], xyz[1], xyz[2]);
+                //ROS_INFO("%d %d %d \n", xyz[0], xyz[1], xyz[2]);
                 /*
                     Since the measurements are noisy, they should be averaged rather than taking the max.
                 */
@@ -226,13 +226,13 @@ bool HMC58X3::calibrate(unsigned char gain, unsigned int n_samples)
             /*
                 Apply the negative bias. (Same gain)
             */
-            ROS_INFO("%d %d %d \n", xyz_total[0], xyz_total[1], xyz_total[2]);
+            //ROS_INFO("%d %d %d \n", xyz_total[0], xyz_total[1], xyz_total[2]);
             writeReg(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS); // Reg A DOR=0x010 + MS1,MS0 set to negative bias.
             for (unsigned int i=0; i<n_samples; i++)
             {
                 setMode(1);
                 getRaw(&xyz[0],&xyz[1],&xyz[2]);   // Get the raw values in case the scales have already been changed.
-                ROS_INFO("%d %d %d \n", xyz[0], xyz[1], xyz[2]);
+                //ROS_INFO("%d %d %d \n", xyz[0], xyz[1], xyz[2]);
                 /*
                     Since the measurements are noisy, they should be averaged.
                 */
@@ -257,7 +257,7 @@ bool HMC58X3::calibrate(unsigned char gain, unsigned int n_samples)
 
             low_limit =SELF_TEST_LOW_LIMIT *counts_per_milligauss[gain]*2*n_samples;
             high_limit=SELF_TEST_HIGH_LIMIT*counts_per_milligauss[gain]*2*n_samples;
-            ROS_INFO("lowl=%d highl=%d\n", low_limit, high_limit);
+            //ROS_INFO("lowl=%d highl=%d\n", low_limit, high_limit);
             if ((true==bret) &&
                     (low_limit <= xyz_total[0]) && (high_limit >= xyz_total[0]) &&
                     (low_limit <= xyz_total[1]) && (high_limit >= xyz_total[1]) &&
@@ -270,6 +270,7 @@ bool HMC58X3::calibrate(unsigned char gain, unsigned int n_samples)
                 x_scale=(counts_per_milligauss[gain]*(HMC58X3_X_SELF_TEST_GAUSS*2))/(xyz_total[0]/n_samples);
                 y_scale=(counts_per_milligauss[gain]*(HMC58X3_Y_SELF_TEST_GAUSS*2))/(xyz_total[1]/n_samples);
                 z_scale=(counts_per_milligauss[gain]*(HMC58X3_Z_SELF_TEST_GAUSS*2))/(xyz_total[2]/n_samples);
+                ROS_INFO("calibration succeded: %f %f %f ",x_scale,y_scale,z_scale);
             }else
             {
                 DEBUG_PRINT("HMC58x3 Self test out of range.");
@@ -379,7 +380,7 @@ void HMC58X3::getValues(float *xyz) {
 */
 void HMC58X3::getID(char id[3]) 
 {
-    unsigned char tx[2];
+    //unsigned char tx[2];
 
     /*tx[0] = HMC58X3_R_IDA;
     i2cWrite(HMC58X3_ADDR, tx, 1);
@@ -387,5 +388,5 @@ void HMC58X3::getID(char id[3])
     if (i2cRead(HMC58X3_ADDR, (unsigned char*)id, 3))*/
     if (!i2c_client._read(HMC58X3_ADDR,HMC58X3_R_IDA,(unsigned char*)id, 3))
         id[0] = id[1] = id[2] = 0;
-    ROS_INFO("id %d %d %d\n", id[0], id[1], id[2]);
+    ROS_INFO("id %c%c%c\n", id[0], id[1], id[2]);
 }   // getID().
