@@ -196,8 +196,8 @@ int main(int argc, char **argv){
 
         //TODO: raw values for now , change this to correct value
         mag_msg.vector.x=mx;
-        mag_msg.vector.x=mx;
-        mag_msg.vector.x=mx;
+        mag_msg.vector.y=my;
+        mag_msg.vector.z=mz;
 
 
         imu_pub.publish(imu_msg);
