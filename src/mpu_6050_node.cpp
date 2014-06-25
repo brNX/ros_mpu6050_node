@@ -1,8 +1,10 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 #include "MPU60X0/MPU60X0.h"
+#include "HMC58X3/HMC58X3.h"
 #include "i2ckernel.h"
 
 #define MPU_FRAMEID "/base_imu"
@@ -69,10 +71,11 @@ int main(int argc, char **argv){
      ***/
     int frequency;
     std::string device;
+    bool use_compass;
     pn.param<int>("frequency", frequency ,20);
     pn.param<bool>("autocalibrate",calibrate,true);
     pn.param<std::string>("device_name",device,"/dev/i2c-0");
-    //pn.param<bool>("use_compass", use_compass,true);
+    pn.param<bool>("use_compass", use_compass,true);
 
 
     ROS_INFO("setting up i2c_client...");
@@ -90,14 +93,33 @@ int main(int argc, char **argv){
 
     ROS_INFO("Initialize MPU_6050...");
     accelgyro->initialize();
+    accelgyro->setI2CMasterModeEnabled(0);
+    accelgyro->setI2CBypassEnabled(1);
     accelgyro->setFullScaleGyroRange(MPU60X0_GYRO_FS_250);//set gyro scale
     accelgyro->setFullScaleAccelRange(MPU60X0_ACCEL_FS_2); //set accel scale
+    ros::Duration(0.005).sleep();
+
+    HMC58X3 magn(i2c);
+    if (use_compass){
+        ROS_INFO("Initialize HMC5883L...");
+        // init HMC5843
+        magn.init(false); // Don't set mode yet, we'll do that later on.
+        // Calibrate HMC using self test, not recommended to change the gain after calibration.
+        magn.calibrate(1); // Use gain 1=default, valid 0-7, 7 not recommended.
+        // Single mode conversion was used in calibration, now set continuous mode
+        magn.setMode(0);
+        ros::Duration(0.010).sleep();
+        magn.setDOR(0b110);
+    }
+
+
 
     if(calibrate){
         zeroGyro();
     }
 
     ros::Publisher imu_pub = pn.advertise<sensor_msgs::Imu>("imu/data", 10);
+    ros::Publisher mag_pub = pn.advertise<geometry_msgs::Vector3Stamped>("imu/mag", 10);
     imu_calib_pub = pn.advertise<std_msgs::Bool>("imu/is_calibrated", 10 , true);
 
     //publish calibration status
@@ -116,13 +138,24 @@ int main(int argc, char **argv){
         ros::Time now = ros::Time::now();
 
         sensor_msgs::Imu imu_msg;
+        geometry_msgs::Vector3Stamped mag_msg;
+
         imu_msg.header.stamp = now;
         imu_msg.header.frame_id = MPU_FRAMEID;
+        mag_msg.header.stamp=now;
+        mag_msg.header.frame_id = MPU_FRAMEID;
+
 
         int16_t ax, ay, az;
         int16_t gx, gy, gz;
+        int16_t mx, my, mz;
 
         accelgyro->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+        if (use_compass){
+            magn.getValues(&mx, &my, &mz);
+        }
+
 
         // remove offsets from the gyroscope
         gx -=  gyro_off_x;
@@ -160,8 +193,15 @@ int main(int argc, char **argv){
         imu_msg.angular_velocity.y=gy_f;
         imu_msg.angular_velocity.z=gz_f;
 
-        imu_pub.publish(imu_msg);
 
+        //TODO: raw values for now , change this to correct value
+        mag_msg.vector.x=mx;
+        mag_msg.vector.x=mx;
+        mag_msg.vector.x=mx;
+
+
+        imu_pub.publish(imu_msg);
+        mag_pub.publish(mag_msg);
 
         ros::spinOnce();
         r.sleep();
