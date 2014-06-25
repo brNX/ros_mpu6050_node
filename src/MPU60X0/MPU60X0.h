@@ -39,6 +39,7 @@ THE SOFTWARE.
 
 #include <stdint.h>
 #include <ros/ros.h>
+#include "../i2ckernel.h"
 
 #define I2CDEV_DEFAULT_READ_TIMEOUT     1000
 
@@ -424,8 +425,8 @@ THE SOFTWARE.
 
 class MPU60X0 {
 public:
-    MPU60X0(ros::ServiceClient & _i2c_ros_client);
-    MPU60X0(bool useSPI, uint8_t address,ros::ServiceClient & _i2c_ros_client);
+    MPU60X0(cereal::I2Ckernel & _i2c_ros_client);
+    MPU60X0(bool useSPI, uint8_t address,cereal::I2Ckernel & _i2c_ros_client);
 	void initialize();
 	bool testConnection();
 
@@ -928,9 +929,9 @@ private:
 	uint8_t buffer[14];
 	uint8_t verifyBuffer[256];
 	uint8_t progBuffer[256];
-    ros::ServiceClient & i2c_ros_client;
-    int i2cwrite(uint8_t address, uint8_t* bytes, int numBytes);
-    int i2cread(uint8_t address, uint8_t* bytes, int numBytes);
+    cereal::I2Ckernel & i2c_client;
+    //int i2cwrite(uint8_t address, uint8_t* bytes, int numBytes);
+    //int i2cread(uint8_t address, uint8_t* bytes, int numBytes);
 };
 
 

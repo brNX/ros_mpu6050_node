@@ -34,7 +34,7 @@ THE SOFTWARE.
 ===============================================
  */
 #include <ros/ros.h>
-#include "i2c_ros/i2c.h"
+#include "../i2ckernel.h"
 #include <string.h>
 #include "MPU60X0.h"
 
@@ -42,7 +42,7 @@ THE SOFTWARE.
  * @see MPU60X0_DEFAULT_ADDRESS
  * @see MPU60X0_DEFAULT_SS_PIN
  */
-MPU60X0::MPU60X0(ros::ServiceClient & _i2c_ros_client):i2c_ros_client(_i2c_ros_client)
+MPU60X0::MPU60X0(cereal::I2Ckernel &_i2c_ros_client):i2c_client(_i2c_ros_client)
 {
    devAddr = MPU60X0_DEFAULT_ADDRESS;
    bSPI = false;
@@ -55,7 +55,7 @@ MPU60X0::MPU60X0(ros::ServiceClient & _i2c_ros_client):i2c_ros_client(_i2c_ros_c
  * @see MPU60X0_ADDRESS_AD0_LOW
  * @see MPU60X0_ADDRESS_AD0_HIGH
  */
-MPU60X0::MPU60X0(bool useSPI, uint8_t address,ros::ServiceClient & _i2c_ros_client):i2c_ros_client(_i2c_ros_client)
+MPU60X0::MPU60X0(bool useSPI, uint8_t address, cereal::I2Ckernel &_i2c_ros_client):i2c_client(_i2c_ros_client)
 {
     bSPI = useSPI;
     devAddr = address;
@@ -3143,14 +3143,16 @@ void MPU60X0::setDMPConfig2(uint8_t config)
  */
 int8_t MPU60X0::readBytes(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data, uint16_t timeout)
 {
-    int8_t count;
+    /*int8_t count;
     unsigned char tx[1];
     tx[0] = regAddr;
 
     i2cwrite(devAddr, tx, 1);
     //delayMSec(1); not needed
-    count = i2cread(devAddr, data, length);
-    return (length-count);
+    count = i2cread(devAddr, data, length);*/
+
+    i2c_client._read(devAddr,regAddr,data,length);
+    return (length-0);
 }
 
 /** Read multiple words from a 16-bit device register.
@@ -3165,20 +3167,23 @@ int8_t MPU60X0::readBytes(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t
 int8_t MPU60X0::readWords(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data, uint16_t timeout)
 {
     int8_t count, i;
-    unsigned char tx[1], tmp;
+    unsigned char tmp;
     unsigned char* ptr = (unsigned char*)data;
-    tx[0] = regAddr;
+
+    /*tx[0] = regAddr;
 
     i2cwrite(devAddr, tx, 1);
     //delayMSec(1); not needed
-    count = i2cread(devAddr, ptr, length*2);
+    count = i2cread(devAddr, ptr, length*2);*/
+
+    i2c_client._read(devAddr,regAddr,ptr,length*2);
 
     for (i=0; i<length*2; i+=2) {
         tmp = ptr[i];
         ptr[i] = ptr[i+1];
         ptr[i+1] = tmp;
     }
-    return (length-(count>>1));
+    return (length-(0>>1));
 }
 /** Write multiple bytes to an 8-bit device register.
  * @param useSPI  true : use SPI
@@ -3190,13 +3195,16 @@ int8_t MPU60X0::readWords(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t
  */
 bool MPU60X0::writeBytes(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t* data)
 {
-    unsigned char tx[length+1];
+   /* unsigned char tx[length+1];
     unsigned char i;
 
     tx[0] = regAddr;
     for (i=1; i<length+1; i++)
         tx[i] = data[i-1];
-    i2cwrite(devAddr, tx, length+1);
+    i2cwrite(devAddr, tx, length+1);*/
+
+    i2c_client._write(devAddr,regAddr,data,length);
+
     return true;
 }
 
@@ -3210,16 +3218,17 @@ bool MPU60X0::writeBytes(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t 
  */
 bool MPU60X0::writeWords(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t* data)
 {
-    unsigned char tx[length*2+1];
-    unsigned char i, j;
+    unsigned char tx[length*2];
+   unsigned char i, j;
 
-    tx[0] = regAddr;
-    for (i=1, j=0; j<length; j++) {
+    //tx[0] = regAddr;
+    for (i=0, j=0; j<length; j++) {
         tx[i] = (unsigned char)((data[j] >> 8) & 0xFF);
         tx[++i] = (unsigned char)((data[j] >> 8) & 0xFF);
     }
 
-    i2cwrite(devAddr, tx, length*2+1);
+    //i2cwrite(devAddr, tx, length*2+1);
+    i2c_client._write(devAddr,regAddr,(uint8_t*) tx,length*2);
     return true;
 }
 
@@ -3457,88 +3466,93 @@ bool MPU60X0::writeWord(bool useSPI, uint8_t devAddr, uint8_t regAddr, uint16_t 
     return writeWords(useSPI, devAddr, regAddr, 1, &data);
 }
 
-void printResponse(i2c_ros::i2c::Response & resp){
-    ROS_INFO("#######message response#####");
-    ROS_INFO("OK : %d",resp.ok);
-    ROS_INFO("Data : ");
-    for(int i =0;i<resp.data.size();i++){
-        ROS_INFO("[%d]: %x",i,resp.data[i]);
-    }
-    ROS_INFO("############################");
+//void printResponse(i2c_ros::i2c::Response & resp){
+//    ROS_INFO("#######message response#####");
+//    ROS_INFO("OK : %d",resp.ok);
+//    ROS_INFO("Data : ");
+//    for(int i =0;i<resp.data.size();i++){
+//        ROS_INFO("[%d]: %x",i,resp.data[i]);
+//    }
+//    ROS_INFO("############################");
 
-}
+//}
 
-void printRequest(i2c_ros::i2c::Request & req){
-    ROS_INFO("#######message request#####");
-    ROS_INFO("Operation : %d",req.operation);
-    ROS_INFO("Address : %x",req.address);
-    ROS_INFO("Size : %u",req.size);
-    ROS_INFO("Data : ");
-    for(int i =0;i<req.data.size();i++){
-        ROS_INFO("[%d]: %x",i,req.data[i]);
-    }
-    ROS_INFO("############################");
+//void printRequest(i2c_ros::i2c::Request & req){
+//    ROS_INFO("#######message request#####");
+//    ROS_INFO("Operation : %d",req.operation);
+//    ROS_INFO("Address : %x",req.address);
+//    ROS_INFO("Size : %u",req.size);
+//    ROS_INFO("Data : ");
+//    for(int i =0;i<req.data.size();i++){
+//        ROS_INFO("[%d]: %x",i,req.data[i]);
+//    }
+//    ROS_INFO("############################");
 
-}
+//}
 
-int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
+//int MPU60X0::i2cwrite(uint8_t address, uint8_t* bytes, int numBytes){
 
-    i2c_ros::i2c srv;
+////    i2c_ros::i2c srv;
 
-    srv.request.address=address;
-    srv.request.operation=i2c_ros::i2cRequest::WRITE;
-    srv.request.size=numBytes;
-    for(int i =0;i<numBytes;i++){
-        srv.request.data.push_back(bytes[i]);
-    }
+////    srv.request.address=address;
+////    srv.request.operation=i2c_ros::i2cRequest::WRITE;
+////    srv.request.size=numBytes;
+////    for(int i =0;i<numBytes;i++){
+////        srv.request.data.push_back(bytes[i]);
+////    }
 
-    //printRequest(srv.request);
+//    //printRequest(srv.request);
 
-    if (i2c_ros_client.call(srv))
-    {
-        //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        //ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
-        //printResponse(srv.response);
-    }
-    else
-    {
-        ROS_ERROR("Failed to call service i2c_ros");
-        return 0;
-    }
-    return 0;
-}
+//    if (i2c_client.call(srv))
 
-
-int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
-
-    i2c_ros::i2c srv;
-
-    srv.request.address=address;
-    srv.request.operation=i2c_ros::i2cRequest::READ;
-    srv.request.size=numBytes;
+//    {
+//        //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
+//        //ROS_INFO("MPU6050 - %s - write response %u", __FUNCTION__,srv.response.ok);
+//        //printResponse(srv.response);
+//    }
+//    else
+//    {
+//        ROS_ERROR("Failed to write to i2c");
+//        return 0;
+//    }
 
 
-    //printRequest(srv.request);
-    if (i2c_ros_client.call(srv))
-    {
-        if(srv.response.data.size()>0){
-            for(int i =0;i<numBytes;i++){
-                bytes[i]=srv.response.data[i];
-            }
-            //printResponse(srv.response);
-        }else{
-            ROS_WARN("MPU6050 - %s - read response data empty", __FUNCTION__);
-        }
-        //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
-        //ROS_INFO("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
-    }
-    else
-    {
-        ROS_ERROR("Failed to call service i2c_ros");
-        return 0;
-    }
-    return 0;
-}
+
+//    return 0;
+//}
+
+
+//int MPU60X0::i2cread(uint8_t address, uint8_t* bytes, int numBytes){
+
+////    i2c_ros::i2c srv;
+
+////    srv.request.address=address;
+////    srv.request.operation=i2c_ros::i2cRequest::READ;
+////    srv.request.size=numBytes;
+
+
+//    //printRequest(srv.request);
+//    //if (i2c_ros_client.call(srv))
+//    if (i2c_client._read(address,))
+//    {
+//        if(srv.response.data.size()>0){
+//            for(int i =0;i<numBytes;i++){
+//                bytes[i]=srv.response.data[i];
+//            }
+//            //printResponse(srv.response);
+//        }else{
+//            ROS_WARN("MPU6050 - %s - read response data empty", __FUNCTION__);
+//        }
+//        //ROS_INFO("Sum: %ld", (long int)srv.response.sum);
+//        //ROS_INFO("MPU6050 - %s - read response %u", __FUNCTION__,srv.response.ok);
+//    }
+//    else
+//    {
+//        ROS_ERROR("Failed to read i2c");
+//        return 0;
+//    }
+//    return 0;
+//}
 
 
 

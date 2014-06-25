@@ -3,9 +3,9 @@
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 #include "MPU60X0/MPU60X0.h"
-#include "i2c_ros/i2c.h"
+#include "i2ckernel.h"
 
-#define MPU_FRAMEID "/base_mpu_6050"
+#define MPU_FRAMEID "/base_imu"
 
 MPU60X0 * accelgyro;
 bool calibrate;
@@ -60,20 +60,28 @@ int main(int argc, char **argv){
 
 
     ROS_INFO("Starting mpu_6050_node...");
-    ROS_INFO("setting up i2c_operation client...");
-    ros::ServiceClient client = n.serviceClient<i2c_ros::i2c>("i2c_operation");
+
+
+
 
     /****
      *IMU parameters
      ***/
     int frequency;
+    std::string device;
     pn.param<int>("frequency", frequency ,20);
     pn.param<bool>("autocalibrate",calibrate,true);
+    pn.param<std::string>("device_name",device,"/dev/i2c-0");
     //pn.param<bool>("use_compass", use_compass,true);
 
 
+    ROS_INFO("setting up i2c_client...");
+    cereal::I2Ckernel i2c;
+
+    i2c._open(device.c_str());
+
     ROS_INFO("setting up MPU60X0...");
-    accelgyro = new MPU60X0(client);
+    accelgyro = new MPU60X0(i2c);
 
 
     // verify connection //TODO: break if unsuccessful
