@@ -2,7 +2,6 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include "MPU60X0/MPU60X0.h"
 #include "HMC58X3/HMC58X3.h"
-#include "i2ckernel.h"
 #include "mpu6050.h"
 
 MPU6050::MPU6050(ros::NodeHandle nh, ros::NodeHandle pnh)
@@ -25,8 +24,6 @@ MPU6050::MPU6050(ros::NodeHandle nh, ros::NodeHandle pnh)
 
 
     ROS_INFO("setting up i2c_client...");
-    cereal::I2Ckernel i2c;
-
     i2c._open(device.c_str());
 
     ROS_INFO("setting up MPU60X0...");
@@ -74,10 +71,10 @@ MPU6050::MPU6050(ros::NodeHandle nh, ros::NodeHandle pnh)
     imu_calib_pub.publish(calibrated);
 
     //calibration service
-    ros::ServiceServer service =  nh_.advertiseService("imu/calibrate",&MPU6050::calibrate_gyro,this);
+    service =  nh_.advertiseService("imu/calibrate",&MPU6050::calibrate_gyro,this);
 
     //setup ros timer with the chosen frequency
-    ros::Timer timer = nh_.createTimer(ros::Rate(frequency), &MPU6050::runOnce,this);
+    timer = nh_.createTimer(ros::Rate(frequency), &MPU6050::runOnce,this);
 
 }
 

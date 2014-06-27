@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
+#include "i2ckernel.h"
 
 class MPU60X0;
 class HMC58X3;
@@ -18,6 +19,7 @@ public:
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
+    cereal::I2Ckernel i2c;
     MPU60X0 * accelgyro;
     HMC58X3 * magn;
     bool calibrate;
@@ -25,6 +27,8 @@ private:
     ros::Publisher imu_calib_pub;
     ros::Publisher imu_pub;
     ros::Publisher mag_pub;
+    ros::ServiceServer service;
+    ros::Timer timer;
 
 
     // calibration parameters
