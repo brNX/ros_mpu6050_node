@@ -1,0 +1,9 @@
+<!-- MPU6050 nodelet publisher -->
+<library path="lib/libmpu6050_nodelet">
+  <class name="mpu_6050/MPU6050Nodelet" type="MPU6050Nodelet"
+    base_class_type="nodelet::Nodelet">
+    <description>
+      MPU6050 nodelet publisher.
+    </description>
+  </class>
+</library>

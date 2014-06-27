@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
    geometry_msgs
    std_msgs
    std_srvs
+   nodelet
 )
 
 ## System dependencies are found with CMake's conventions
@@ -56,9 +57,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES mpu_6050
-   CATKIN_DEPENDS std_msgs std_srvs
+   INCLUDE_DIRS
+   LIBRARIES mpu6050_nodelet
+   CATKIN_DEPENDS std_msgs std_srvs sensor_msgs geometry_msgs nodelet
 #  DEPENDS system_lib
 )
 
@@ -73,10 +74,9 @@ include_directories(
    include  ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(mpu_6050
-#   src/${PROJECT_NAME}/mpu_6050.cpp
-# )
+# create imu_filter_nodelet library
+add_library (mpu6050_nodelet  src/i2ckernel.cpp src/HMC58X3/HMC58X3.cpp src/MPU60X0/MPU60X0.cpp src/mpu6050.cpp src/mpu6050nodelet.cpp)
+target_link_libraries(mpu6050_nodelet ${catkin_LIBRARIES})
 
 ## Declare a cpp executable
 add_executable(mpu_6050_node src/i2ckernel.cpp src/HMC58X3/HMC58X3.cpp src/MPU60X0/MPU60X0.cpp src/mpu6050.cpp src/mpu_6050_node.cpp)
