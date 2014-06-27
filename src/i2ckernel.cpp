@@ -48,7 +48,10 @@
 
 using namespace cereal;
 
-//TODO: use of linux i2c dev
+I2Ckernel::I2Ckernel():i2c_fd(0),current_slave(0)
+{
+
+}
 
 void I2Ckernel::_open(const char* devicename){
   

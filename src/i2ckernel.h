@@ -45,6 +45,7 @@ namespace cereal{
 class I2Ckernel
 {
 public:
+    I2Ckernel();
     void _open(const char* devicename);
     void _close();
 
