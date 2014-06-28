@@ -102,7 +102,7 @@ static inline int reg_int_cb(struct int_param_s *int_param)
 #define labs        abs
 #define fabs(x)     (((x)>0)?(x):-(x))
 #elif defined EMPL_TARGET_LINUX
-#include "ros_glue.h"
+#include "linux_glue.h"
 #else
 #error  Gyro driver is missing the system layer implementations.
 #endif

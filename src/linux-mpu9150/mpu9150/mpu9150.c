@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ros_glue.h"
+#include "linux_glue.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "mpu9150.h"
@@ -50,16 +50,16 @@ void mpu9150_set_debug(int on)
 	debug_on = on;
 }
 
-int mpu9150_init(int sample_rate, int mix_factor)
+int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 {
 	signed char gyro_orientation[9] = { 1, 0, 0,
                                         0, 1, 0,
                                         0, 0, 1 };
 
-    /*if (i2c_bus < MIN_I2C_BUS || i2c_bus > MAX_I2C_BUS) {
+    if (i2c_bus < MIN_I2C_BUS || i2c_bus > MAX_I2C_BUS) {
 		printf("Invalid I2C bus %d\n", i2c_bus);
 		return -1;
-    }*/
+    }
 
 	if (sample_rate < MIN_SAMPLE_RATE || sample_rate > MAX_SAMPLE_RATE) {
 		printf("Invalid sample rate %d\n", sample_rate);
@@ -73,7 +73,7 @@ int mpu9150_init(int sample_rate, int mix_factor)
 
 	yaw_mixing_factor = mix_factor;
 
-    //linux_set_i2c_bus(i2c_bus);
+    linux_set_i2c_bus(i2c_bus);
 
 	printf("\nInitializing IMU .");
 	fflush(stdout);

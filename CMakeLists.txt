@@ -7,7 +7,6 @@ project(mpu_6050)
 find_package(catkin REQUIRED COMPONENTS
    roscpp
    sensor_msgs
-   i2c_ros
    std_msgs
    std_srvs
 )
@@ -83,7 +82,7 @@ include_directories(
 ## Declare a cpp executable
 add_executable(
 mpu_6050_node 
-src/linux-mpu9150/glue/ros_glue.c
+src/linux-mpu9150/glue/linux_glue.c
 src/linux-mpu9150/mpu9150/mpu9150.c
 src/linux-mpu9150/mpu9150/quaternion.c
 src/linux-mpu9150/mpu9150/vector3d.c
