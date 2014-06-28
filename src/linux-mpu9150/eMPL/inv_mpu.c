@@ -22,7 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 #include "inv_mpu.h"
+
+#define HMC5883L_SECONDARY
 
 /* The following functions must be defined for this platform:
  * i2c_write(unsigned char slave_addr, unsigned char reg_addr,
@@ -48,7 +51,7 @@
 static inline int reg_int_cb(struct int_param_s *int_param)
 {
     return msp430_reg_int_cb(int_param->cb, int_param->pin, int_param->lp_exit,
-        int_param->active_low);
+                             int_param->active_low);
 }
 #define log_i(...)     do {} while (0)
 #define log_e(...)     do {} while (0)
@@ -69,7 +72,7 @@ static inline int reg_int_cb(struct int_param_s *int_param)
 static inline int reg_int_cb(struct int_param_s *int_param)
 {
     return msp430_reg_int_cb(int_param->cb, int_param->pin, int_param->lp_exit,
-        int_param->active_low);
+                             int_param->active_low);
 }
 #define log_i       MPL_LOGI
 #define log_e       MPL_LOGE
@@ -182,7 +185,7 @@ struct gyro_reg_s {
     unsigned char bank_sel;
     unsigned char mem_start_addr;
     unsigned char prgm_start_h;
-#if defined AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
     unsigned char s0_addr;
     unsigned char s0_reg;
     unsigned char s0_ctrl;
@@ -207,7 +210,7 @@ struct hw_s {
     unsigned short temp_sens;
     short temp_offset;
     unsigned short bank_size;
-#if defined AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
     unsigned short compass_fsr;
 #endif
 };
@@ -267,11 +270,16 @@ struct chip_cfg_s {
     unsigned char dmp_loaded;
     /* Sampling rate used when DMP is enabled. */
     unsigned short dmp_sample_rate;
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY
     /* Compass sample rate. */
     unsigned short compass_sample_rate;
     unsigned char compass_addr;
     short mag_sens_adj[3];
+#elif defined HMC5883L_SECONDARY
+    /* Compass sample rate. */
+    unsigned short compass_sample_rate;
+    unsigned char compass_addr;
+    float mag_sens_adj[3];
 #endif
 };
 
@@ -404,6 +412,7 @@ enum lp_accel_rate_e {
 #define BIT_STBY_XYZA       (BIT_STBY_XA | BIT_STBY_YA | BIT_STBY_ZA)
 #define BIT_STBY_XYZG       (BIT_STBY_XG | BIT_STBY_YG | BIT_STBY_ZG)
 
+//TODO: check if used
 #if defined AK8975_SECONDARY
 #define SUPPORTS_AK89xx_HIGH_SENS   (0x00)
 #define AK89xx_FSR                  (9830)
@@ -440,6 +449,47 @@ enum lp_accel_rate_e {
 #define AKM_WHOAMI      (0x48)
 #endif
 
+#ifdef HMC5883L_SECONDARY
+
+#define HMC58X3_ADDR (0x1E) // 7 bit address of the HMC58X3 used with the Wire library
+#define HMC_POS_BIAS (1)
+#define HMC_NEG_BIAS (2)
+
+#define HMC58X3_R_CONFA (0)
+#define HMC58X3_R_CONFB (1)
+#define HMC58X3_R_MODE (2)
+#define HMC58X3_R_XM (3)
+#define HMC58X3_R_XL (4)
+#define HMC58X3_R_YM (7)  //!< Register address for YM.
+#define HMC58X3_R_YL (8)  //!< Register address for YL.
+#define HMC58X3_R_ZM (5)  //!< Register address for ZM.
+#define HMC58X3_R_ZL (6)  //!< Register address for ZL.
+
+#define HMC58X3_X_SELF_TEST_GAUSS (+1.16)                       //!< X axis level when bias current is applied.
+#define HMC58X3_Y_SELF_TEST_GAUSS (HMC58X3_X_SELF_TEST_GAUSS)   //!< Y axis level when bias current is applied.
+#define HMC58X3_Z_SELF_TEST_GAUSS (+1.08)                       //!< Y axis level when bias current is applied.
+
+#define SELF_TEST_LOW_LIMIT  (243.0/390.0)   //!< Low limit when gain is 5.
+#define SELF_TEST_HIGH_LIMIT (575.0/390.0)   //!< High limit when gain is 5.
+
+#define HMC58X3_R_STATUS (9)
+#define HMC58X3_R_IDA (10)
+#define HMC58X3_R_IDB (11)
+#define HMC58X3_R_IDC (12)
+
+const int counts_per_milligauss[8]={
+    1370,
+    1090,
+    820,
+    660,
+    440,
+    390,
+    330,
+    230
+};
+
+#endif
+
 #if defined MPU6050
 const struct gyro_reg_s reg = {
     .who_am_i       = 0x75,
@@ -469,8 +519,8 @@ const struct gyro_reg_s reg = {
     .bank_sel       = 0x6D,
     .mem_start_addr = 0x6E,
     .prgm_start_h   = 0x70
-#ifdef AK89xx_SECONDARY
-    ,.raw_compass   = 0x49,
+        #if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
+            ,.raw_compass   = 0x49,
     .yg_offs_tc     = 0x01,
     .s0_addr        = 0x25,
     .s0_reg         = 0x26,
@@ -482,7 +532,7 @@ const struct gyro_reg_s reg = {
     .s0_do          = 0x63,
     .s1_do          = 0x64,
     .i2c_delay_ctrl = 0x67
-#endif
+        #endif
 };
 const struct hw_s hw = {
     .addr           = 0x68,
@@ -491,9 +541,9 @@ const struct hw_s hw = {
     .temp_sens      = 340,
     .temp_offset    = -521,
     .bank_size      = 256
-#if defined AK89xx_SECONDARY
-    ,.compass_fsr    = AK89xx_FSR
-#endif
+        #if defined AK89xx_SECONDARY
+            ,.compass_fsr    = AK89xx_FSR
+        #endif
 };
 
 const struct test_s test = {
@@ -550,8 +600,8 @@ const struct gyro_reg_s reg = {
     .bank_sel       = 0x6D,
     .mem_start_addr = 0x6E,
     .prgm_start_h   = 0x70
-#ifdef AK89xx_SECONDARY
-    ,.raw_compass   = 0x49,
+        #ifdef AK89xx_SECONDARY
+            ,.raw_compass   = 0x49,
     .s0_addr        = 0x25,
     .s0_reg         = 0x26,
     .s0_ctrl        = 0x27,
@@ -562,7 +612,7 @@ const struct gyro_reg_s reg = {
     .s0_do          = 0x63,
     .s1_do          = 0x64,
     .i2c_delay_ctrl = 0x67
-#endif
+        #endif
 };
 const struct hw_s hw = {
     .addr           = 0x68,
@@ -571,9 +621,9 @@ const struct hw_s hw = {
     .temp_sens      = 321,
     .temp_offset    = 0,
     .bank_size      = 256
-#if defined AK89xx_SECONDARY
-    ,.compass_fsr    = AK89xx_FSR
-#endif
+        #if defined AK89xx_SECONDARY
+            ,.compass_fsr    = AK89xx_FSR
+        #endif
 };
 
 const struct test_s test = {
@@ -602,7 +652,7 @@ static struct gyro_state_s st = {
 
 #define MAX_PACKET_LENGTH (12)
 
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
 static int setup_compass(void);
 #define MAX_COMPASS_SAMPLE_RATE (100)
 #endif
@@ -710,7 +760,7 @@ int mpu_init(struct int_param_s *int_param)
     if (i2c_read(st.hw->addr, st.reg->accel_offs, 6, data))
         return -1;
     rev = ((data[5] & 0x01) << 2) | ((data[3] & 0x01) << 1) |
-        (data[1] & 0x01);
+            (data[1] & 0x01);
 
     if (rev) {
         /* Congrats, these parts are better. */
@@ -728,7 +778,7 @@ int mpu_init(struct int_param_s *int_param)
         rev = data[0] & 0x0F;
         if (!rev) {
             log_e("Product ID read as 0 indicates device is either "
-                "incompatible or an MPU3050.\n");
+                  "incompatible or an MPU3050.\n");
             return -1;
         } else if (rev == 4) {
             log_i("Half sensitivity part found.\n");
@@ -763,7 +813,7 @@ int mpu_init(struct int_param_s *int_param)
     st.chip_cfg.sample_rate = 0xFFFF;
     st.chip_cfg.fifo_enable = 0xFF;
     st.chip_cfg.bypass_mode = 0xFF;
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
     st.chip_cfg.compass_sample_rate = 0xFFFF;
 #endif
     /* mpu_set_sensors always preserves this setting. */
@@ -1371,7 +1421,7 @@ int mpu_get_compass_sample_rate(unsigned short *rate)
  */
 int mpu_set_compass_sample_rate(unsigned short rate)
 {
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
     unsigned char div;
     if (!rate || rate > st.chip_cfg.sample_rate || rate > MAX_COMPASS_SAMPLE_RATE)
         return -1;
@@ -1632,7 +1682,7 @@ int mpu_get_int_status(short *status)
  *  @return     0 if successful.
  */
 int mpu_read_fifo(short *gyro, short *accel, uint32_t *timestamp,
-        unsigned char *sensors, unsigned char *more)
+                  unsigned char *sensors, unsigned char *more)
 {
     /* Assumes maximum packet size is gyro (6) + accel (6). */
     unsigned char data[MAX_PACKET_LENGTH];
@@ -1662,7 +1712,7 @@ int mpu_read_fifo(short *gyro, short *accel, uint32_t *timestamp,
     fifo_count = (data[0] << 8) | data[1];
     if (fifo_count < packet_size)
         return 0;
-//    log_i("FIFO count: %hd\n", fifo_count);
+    //    log_i("FIFO count: %hd\n", fifo_count);
     if (fifo_count > (st.hw->max_fifo >> 1)) {
         /* FIFO is 50% full, better check overflow bit. */
         if (i2c_read(st.hw->addr, st.reg->int_status, 1, data))
@@ -1713,7 +1763,7 @@ int mpu_read_fifo(short *gyro, short *accel, uint32_t *timestamp,
  *  @param[in]  more    Number of remaining packets.
  */
 int mpu_read_fifo_stream(unsigned short length, unsigned char *data,
-    unsigned char *more)
+                         unsigned char *more)
 {
     unsigned char tmp[2];
     unsigned short fifo_count;
@@ -1871,7 +1921,7 @@ static int accel_self_test(int32_t *bias_regular, int32_t *bias_st)
             if (fabs(st_shift_var) > test.max_accel_var)
                 result |= 1 << jj;
         } else if ((st_shift_cust < test.min_g) ||
-            (st_shift_cust > test.max_g))
+                   (st_shift_cust > test.max_g))
             result |= 1 << jj;
     }
 
@@ -1901,7 +1951,7 @@ static int gyro_self_test(int32_t *bias_regular, int32_t *bias_st)
             if (fabs(st_shift_var) > test.max_gyro_var)
                 result |= 1 << jj;
         } else if ((st_shift_cust < test.min_dps) ||
-            (st_shift_cust > test.max_dps))
+                   (st_shift_cust > test.max_dps))
             result |= 1 << jj;
     }
     return result;
@@ -2054,11 +2104,11 @@ static int get_st_biases(int32_t *gyro, int32_t *accel, unsigned char hw_test)
     gyro[2] = (int32_t)(((float)gyro[2]*65536.f) / test.gyro_sens / packet_count);
     if (has_accel) {
         accel[0] = (int32_t)(((float)accel[0]*65536.f) / test.accel_sens /
-            packet_count);
+                packet_count);
         accel[1] = (int32_t)(((float)accel[1]*65536.f) / test.accel_sens /
-            packet_count);
+                packet_count);
         accel[2] = (int32_t)(((float)accel[2]*65536.f) / test.accel_sens /
-            packet_count);
+                packet_count);
         /* Don't remove gravity! */
         accel[2] -= 65536L;
     }
@@ -2067,11 +2117,11 @@ static int get_st_biases(int32_t *gyro, int32_t *accel, unsigned char hw_test)
     gyro[1] = (int32_t)(((int64_t)gyro[1]<<16) / test.gyro_sens / packet_count);
     gyro[2] = (int32_t)(((int64_t)gyro[2]<<16) / test.gyro_sens / packet_count);
     accel[0] = (int32_t)(((int64_t)accel[0]<<16) / test.accel_sens /
-        packet_count);
+            packet_count);
     accel[1] = (int32_t)(((int64_t)accel[1]<<16) / test.accel_sens /
-        packet_count);
+            packet_count);
     accel[2] = (int32_t)(((int64_t)accel[2]<<16) / test.accel_sens /
-        packet_count);
+            packet_count);
     /* Don't remove gravity! */
     if (accel[2] > 0L)
         accel[2] -= 65536L;
@@ -2205,7 +2255,7 @@ restore:
  *  @return     0 if successful.
  */
 int mpu_write_mem(unsigned short mem_addr, unsigned short length,
-        unsigned char *data)
+                  unsigned char *data)
 {
     unsigned char tmp[2];
 
@@ -2238,7 +2288,7 @@ int mpu_write_mem(unsigned short mem_addr, unsigned short length,
  *  @return     0 if successful.
  */
 int mpu_read_mem(unsigned short mem_addr, unsigned short length,
-        unsigned char *data)
+                 unsigned char *data)
 {
     unsigned char tmp[2];
 
@@ -2270,7 +2320,7 @@ int mpu_read_mem(unsigned short mem_addr, unsigned short length,
  *  @return     0 if successful.
  */
 int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
-    unsigned short start_addr, unsigned short sample_rate)
+                      unsigned short start_addr, unsigned short sample_rate)
 {
     unsigned short ii;
     unsigned short this_write;
@@ -2355,6 +2405,153 @@ int mpu_get_dmp_state(unsigned char *enabled)
     return 0;
 }
 
+#ifdef HMC5883L_SECONDARY
+
+#define DEBUG_PRINT(x) printf("%s\n", (x))
+
+// set data output rate
+// 0-6, 4 default, normal operation assumed
+void hmc5883_setDOR(unsigned char DOR) {
+    if (DOR>6) return;
+    unsigned char data=DOR<<2;
+    i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFA, 1, &data);
+}
+
+
+void hmc5883_setGain(unsigned char gain) {
+    // 0-7, 1 default
+    if (gain > 7) return;
+    unsigned char data=gain << 5;
+    i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFB, 1, &data);
+}
+
+void hmc5883_setMode(unsigned char mode) {
+    if (mode > 2) {
+        return;
+    }
+
+    i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_MODE, 1, &mode);
+    delay_ms(100);
+}
+
+void hmc5883_getRaw(int16_t *x, int16_t *y, int16_t *z)
+{
+    unsigned char rx[6];
+
+    i2c_read(st.chip_cfg.compass_addr,HMC58X3_R_XM,6,rx);
+
+    *x = (rx[0] << 8) | rx[1];
+    // the Z registers comes before the Y registers in the HMC5883L
+    *z = (rx[2] << 8) | rx[3];
+    *y = (rx[4] << 8) | rx[5];
+}
+
+
+void hmc5883_calibrate(unsigned char gain, unsigned int n_samples)
+{
+    int16_t xyz[3];                     // 16 bit integer values for each axis.
+    int32_t xyz_total[3]={0,0,0};  // 32 bit totals so they won't overflow.
+    int32_t low_limit, high_limit;
+    bool bret=true;                 // Function return value.  Will return false if the wrong identifier is returned, saturation is detected or response is out of range to self test bias.
+    unsigned char data[4];
+
+    /*
+        Make sure we are talking to the correct device.
+        Hard to believe Honeywell didn't change the identifier.
+    */
+    if ((8>gain) && (0<n_samples)) // Notice this allows gain setting of 7 which the data sheet warns against.
+    {
+            /*
+                Use the positive bias current to impose a known field on each axis.
+                This field depends on the device and the axis.
+            */
+            data[0]=0x010 + HMC_POS_BIAS; // Reg A DOR=0x010 + MS1,MS0 set to pos bias
+            i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFA, 1, data);
+
+            /*
+                Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
+                The new gain setting is effective from the second measurement and on.
+            */
+            hmc5883_setGain(gain);
+            hmc5883_setMode(1);                         // Change to single measurement mode.
+            hmc5883_getRaw(&xyz[0],&xyz[1],&xyz[2]);    // Get the raw values and ignore since this reading may use previous gain.
+
+            for (unsigned int i=0; i<n_samples; i++)
+            {
+                hmc5883_setMode(1);
+                hmc5883_getRaw(&xyz[0],&xyz[1],&xyz[2]);   // Get the raw values in case the scales have already been changed.
+                /*
+                    Since the measurements are noisy, they should be averaged rather than taking the max.
+                */
+                xyz_total[0]+=xyz[0];
+                xyz_total[1]+=xyz[1];
+                xyz_total[2]+=xyz[2];
+                /*
+                    Detect saturation.
+                */
+                if (-(1<<12) >= min(xyz[0],min(xyz[1],xyz[2])))
+                {
+                    DEBUG_PRINT("HMC58x3 Self test saturated. Increase range.");
+                    bret=false;
+                    break;  // Breaks out of the for loop.  No sense in continuing if we saturated.
+                }
+            }
+            /*
+                Apply the negative bias. (Same gain)
+            */
+            data[0]=0x010 + HMC_NEG_BIAS; // Reg A DOR=0x010 + MS1,MS0 set to negative bias.
+            i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFA, 1, data);
+            for (unsigned int i=0; i<n_samples; i++)
+            {
+                hmc5883_setMode(1);
+                hmc5883_getRaw(&xyz[0],&xyz[1],&xyz[2]);   // Get the raw values in case the scales have already been changed.
+                /*
+                    Since the measurements are noisy, they should be averaged.
+                */
+                xyz_total[0]-=xyz[0];
+                xyz_total[1]-=xyz[1];
+                xyz_total[2]-=xyz[2];
+                /*
+                    Detect saturation.
+                */
+                if (-(1<<12) >= min(xyz[0],min(xyz[1],xyz[2])))
+                {
+                    DEBUG_PRINT("HMC58x3 Self test saturated. Increase range.");
+                    bret=false;
+                    break;  // Breaks out of the for loop.  No sense in continuing if we saturated.
+                }
+            }
+            /*
+                Compare the values against the expected self test bias gauss.
+                Notice, the same limits are applied to all axis.
+            */
+            printf("%d %d %d \n", xyz_total[0], xyz_total[1], xyz_total[2]);
+
+            low_limit =SELF_TEST_LOW_LIMIT *counts_per_milligauss[gain]*2*n_samples;
+            high_limit=SELF_TEST_HIGH_LIMIT*counts_per_milligauss[gain]*2*n_samples;
+            if ((true==bret) &&
+                    (low_limit <= xyz_total[0]) && (high_limit >= xyz_total[0]) &&
+                    (low_limit <= xyz_total[1]) && (high_limit >= xyz_total[1]) &&
+                    (low_limit <= xyz_total[2]) && (high_limit >= xyz_total[2]) )
+            {   /*
+                    Successful calibration.
+                    Normalize the scale factors so all axis return the same range of values for the bias field.
+                    Factor of 2 is from summation of total of n_samples from both positive and negative bias.
+                */
+                st.chip_cfg.mag_sens_adj[0]=(counts_per_milligauss[gain]*(HMC58X3_X_SELF_TEST_GAUSS*2))/(xyz_total[0]/n_samples);
+                st.chip_cfg.mag_sens_adj[1]=(counts_per_milligauss[gain]*(HMC58X3_Y_SELF_TEST_GAUSS*2))/(xyz_total[1]/n_samples);
+                st.chip_cfg.mag_sens_adj[2]=(counts_per_milligauss[gain]*(HMC58X3_Z_SELF_TEST_GAUSS*2))/(xyz_total[2]/n_samples);
+                printf("calibration succeded: %f %f %f ",st.chip_cfg.mag_sens_adj[0],st.chip_cfg.mag_sens_adj[1],st.chip_cfg.mag_sens_adj[2]);
+            }else
+            {
+                DEBUG_PRINT("HMC58x3 Self test out of range.");
+                bret=false;
+            }
+            data[0]=0x010; // // set RegA/DOR back to default.
+            i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFA, 1, data);
+    }
+}
+#endif
 
 /* This initialization is similar to the one in ak8975.c. */
 static int setup_compass(void)
@@ -2457,6 +2654,37 @@ static int setup_compass(void)
 #endif
 
     return 0;
+
+#elif defined HMC5883L_SECONDARY
+    unsigned char data[4];
+
+    st.chip_cfg.compass_addr = HMC58X3_ADDR;
+
+    mpu_set_bypass(1);
+
+    delay_ms(5); // you need to wait at least 5ms after power on to initialize
+
+    // 8 samples averaged, 75Hz frequency, no artificial bias.
+    data[0] = 0x70;
+    if (i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFA, 1, data))
+        return -1;
+    data[0] = 0xA0;
+    if (i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_CONFB, 1, data))
+        return -1;
+    data[0] = 0x00;
+    if (i2c_write(st.chip_cfg.compass_addr, HMC58X3_R_MODE, 1, data))
+        return -1;
+
+    hmc5883_calibrate(1,32); // Use gain 1=default, valid 0-7, 7 not recommended.
+
+    // Single mode conversion was used in calibration, now set continuous mode
+    hmc5883_setMode(0);
+    delay_ms(10);
+    hmc5883_setDOR(0b110);
+
+    //TODO: finish setting up MPU6050 in master mode
+
+    return 0;
 #else
     return -1;
 #endif
@@ -2470,7 +2698,7 @@ static int setup_compass(void)
  */
 int mpu_get_compass_reg(short *data, uint32_t *timestamp)
 {
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY
     unsigned char tmp[9];
 
     if (!(st.chip_cfg.sensors & INV_XYZ_COMPASS))
@@ -2500,6 +2728,7 @@ int mpu_get_compass_reg(short *data, uint32_t *timestamp)
     if (tmp[7] & AKM_OVERFLOW)
         return -3;
 #endif
+
     data[0] = (tmp[2] << 8) | tmp[1];
     data[1] = (tmp[4] << 8) | tmp[3];
     data[2] = (tmp[6] << 8) | tmp[5];
@@ -2511,6 +2740,8 @@ int mpu_get_compass_reg(short *data, uint32_t *timestamp)
     if (timestamp)
         get_ms(timestamp);
     return 0;
+#elif defined HMC5883L_SECONDARY
+    //TODO:implement read
 #else
     return -1;
 #endif
@@ -2576,7 +2807,7 @@ int mpu_get_compass_fsr(unsigned short *fsr)
  *  @return     0 if successful.
  */
 int mpu_lp_motion_interrupt(unsigned short thresh, unsigned char time,
-    unsigned char lpa_freq)
+                            unsigned char lpa_freq)
 {
     unsigned char data[3];
 

@@ -11,7 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
    std_srvs
 )
 
-add_definitions( -DMPU6050 -DEMPL_TARGET_LINUX )
+add_definitions( -DMPU6050 -DHMC5883L_SECONDARY -DEMPL_TARGET_LINUX )
+
+set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

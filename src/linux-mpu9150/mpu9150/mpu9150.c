@@ -262,10 +262,10 @@ int mpu9150_read_dmp(mpudata_t *mpu)
 
 int mpu9150_read_mag(mpudata_t *mpu)
 {
-	/*if (mpu_get_compass_reg(mpu->rawMag, &mpu->magTimestamp) < 0) {
+    if (mpu_get_compass_reg(mpu->rawMag, &mpu->magTimestamp) < 0) {
 		printf("mpu_get_compass_reg() failed\n");
 		return -1;
-	}*/
+    }
 
 	return 0;
 }
