@@ -33,17 +33,16 @@ int main(int argc, char **argv){
     pn.param<int>("frequency", sample_rate ,DEFAULT_SAMPLE_RATE_HZ);
     int i2c_bus;
     pn.param<int>("i2c_bus",i2c_bus,0);
+    int yaw_mix_factor;
+    pn.param<int>("yaw_mix_factor",yaw_mix_factor,DEFAULT_YAW_MIX_FACTOR);
 
     ROS_INFO("setting up MPU60X0...");
-
-    //TODO:  change this to a parameter to use compass
-    int yaw_mix_factor = DEFAULT_YAW_MIX_FACTOR;
 
     mpudata_t mpu;
 
     //mpu9150_set_debug(1);
     ROS_INFO("Initialize MPU_6050...");
-    if (mpu9150_init(i2c_bus,sample_rate, 0)){
+    if (mpu9150_init(i2c_bus,sample_rate, yaw_mix_factor)){
         ROS_FATAL("MPU6050 - %s - MPU6050 connection failed",__FUNCTION__);
         ROS_BREAK();
     }
@@ -71,7 +70,7 @@ int main(int argc, char **argv){
              imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];
 
 
-             //TODO: needs conversion
+             //TODO: verify conversion
 
              float ax_f, ay_f, az_f;
              float gx_f, gy_f, gz_f;

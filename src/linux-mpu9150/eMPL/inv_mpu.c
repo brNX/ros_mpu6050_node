@@ -25,8 +25,6 @@
 #include <stdbool.h>
 #include "inv_mpu.h"
 
-#define HMC5883L_SECONDARY
-
 /* The following functions must be defined for this platform:
  * i2c_write(unsigned char slave_addr, unsigned char reg_addr,
  *      unsigned char length, unsigned char const *data)
@@ -842,7 +840,7 @@ int mpu_init(struct int_param_s *int_param)
     if (int_param)
         reg_int_cb(int_param);
 
-#ifdef AK89xx_SECONDARY
+#if defined AK89xx_SECONDARY || defined HMC5883L_SECONDARY
     setup_compass();
     if (mpu_set_compass_sample_rate(10))
         return -1;
@@ -2682,7 +2680,54 @@ static int setup_compass(void)
     delay_ms(10);
     hmc5883_setDOR(0b110);
 
-    //TODO: finish setting up MPU6050 in master mode
+    //TODO: verify this (MPU6050 in master mode)
+
+    mpu_set_bypass(0);
+
+    /* Set up master mode, master clock, and ES bit. */
+    data[0] = 0x40;
+    if (i2c_write(st.hw->addr, st.reg->i2c_mst, 1, data))
+        return -1;
+
+    /* Slave 0 reads from HMC5883 data registers. */
+    data[0] = BIT_I2C_READ | st.chip_cfg.compass_addr;
+    if (i2c_write(st.hw->addr, st.reg->s0_addr, 1, data))
+        return -1;
+
+    /* Compass reads start at this register. */
+    data[0] = HMC58X3_R_XM;
+    if (i2c_write(st.hw->addr, st.reg->s0_reg, 1, data))
+        return -1;
+
+    /* Enable slave 0, 6-byte reads. */
+    data[0] = BIT_SLAVE_EN | 6;
+    if (i2c_write(st.hw->addr, st.reg->s0_ctrl, 1, data))
+        return -1;
+
+//    /* Slave 1 changes AKM measurement mode. */
+//    data[0] = st.chip_cfg.compass_addr;
+//    if (i2c_write(st.hw->addr, st.reg->s1_addr, 1, data))
+//        return -1;
+
+//    /* AKM measurement mode register. */
+//    data[0] = AKM_REG_CNTL;
+//    if (i2c_write(st.hw->addr, st.reg->s1_reg, 1, data))
+//        return -1;
+
+//    /* Enable slave 1, 1-byte writes. */
+//    data[0] = BIT_SLAVE_EN | 1;
+//    if (i2c_write(st.hw->addr, st.reg->s1_ctrl, 1, data))
+//        return -1;
+
+//    /* Set slave 1 data. */
+//    data[0] = AKM_SINGLE_MEASUREMENT;
+//    if (i2c_write(st.hw->addr, st.reg->s1_do, 1, data))
+//        return -1;
+
+    /* Trigger slave 0 actions at each sample. */
+    data[0] = 0x01;
+    if (i2c_write(st.hw->addr, st.reg->i2c_delay_ctrl, 1, data))
+        return -1;
 
     return 0;
 #else
@@ -2742,6 +2787,32 @@ int mpu_get_compass_reg(short *data, uint32_t *timestamp)
     return 0;
 #elif defined HMC5883L_SECONDARY
     //TODO:implement read
+    unsigned char tmp[9];
+
+    if (!(st.chip_cfg.sensors & INV_XYZ_COMPASS))
+        return -1;
+    if (i2c_read(st.hw->addr, st.reg->raw_compass, 6, tmp))
+        return -1;
+    int16_t xr,yr,zr;
+    float x,y,z;
+
+
+    xr = (tmp[0] << 8) | tmp[1];
+    zr = (tmp[2] << 8) | tmp[3];
+    yr = (tmp[4] << 8) | tmp[5];
+
+    x = ((float) xr) / st.chip_cfg.mag_sens_adj[0];
+    y = ((float) yr) / st.chip_cfg.mag_sens_adj[1];
+    z = ((float) zr) / st.chip_cfg.mag_sens_adj[2];
+
+    data[0] = (int16_t) (x + 0.5);
+    data[1] = (int16_t) (y + 0.5);
+    data[2] = (int16_t) (z + 0.5);
+
+    if (timestamp)
+        get_ms(timestamp);
+    return 0;
+
 #else
     return -1;
 #endif

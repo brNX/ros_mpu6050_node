@@ -86,7 +86,7 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 
-	if (mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)) {
+    if (mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS)) {
 		printf("\nmpu_set_sensors() failed\n");
 		return -1;
 	}
