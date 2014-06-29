@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
    sensor_msgs
    std_msgs
    std_srvs
+   geometry_msgs
 )
 
 add_definitions( -DMPU6050 -DHMC5883L_SECONDARY -DEMPL_TARGET_LINUX )
@@ -61,7 +62,7 @@ set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES mpu_6050
-   CATKIN_DEPENDS std_msgs std_srvs
+   CATKIN_DEPENDS std_msgs std_srvs geometry_msgs
 #  DEPENDS system_lib
 )
 

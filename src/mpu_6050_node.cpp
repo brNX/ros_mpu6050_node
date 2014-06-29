@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 
@@ -52,6 +53,7 @@ int main(int argc, char **argv){
 
 
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu/data", 10);
+    ros::Publisher mag_pub = n.advertise<geometry_msgs::Vector3Stamped>("imu/mag", 10);
     ros::Rate r(sample_rate);
 
     while(ros::ok())
@@ -61,6 +63,9 @@ int main(int argc, char **argv){
         sensor_msgs::Imu imu_msg;
         imu_msg.header.stamp = now;
         imu_msg.header.frame_id = MPU_FRAMEID;
+        geometry_msgs::Vector3Stamped mag_msg;
+        mag_msg.header.stamp = now;
+        mag_msg.header.frame_id = MPU_FRAMEID;
 
          if (mpu9150_read(&mpu) == 0) {
 
@@ -91,7 +96,12 @@ int main(int argc, char **argv){
              imu_msg.angular_velocity.y=gy_f;
              imu_msg.angular_velocity.z=gz_f;
 
+             mag_msg.vector.x=mpu.calibratedMag[VEC3_X];
+             mag_msg.vector.y=mpu.calibratedMag[VEC3_Y];
+             mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
+
              imu_pub.publish(imu_msg);
+             mag_pub.publish(mag_msg);
 
 
          }else{
