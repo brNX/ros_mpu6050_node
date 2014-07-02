@@ -3,7 +3,8 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
-#include <tf/transform_datatypes.h>
+#include <geometry_msgs/Vector3Stamped.h>
+//#include <tf/transform_datatypes.h>
 
 
 #define MPU_FRAMEID "/imu"
@@ -55,7 +56,7 @@ int main(int argc, char **argv){
 
 
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu/data", 10);
-    ros::Publisher imu_pub2 = n.advertise<sensor_msgs::Imu>("imu/data2", 10);
+    ros::Publisher imu_euler_pub = n.advertise<geometry_msgs::Vector3Stamped>("imu/euler", 10);
     ros::Publisher mag_pub = n.advertise<geometry_msgs::Vector3Stamped>("imu/mag", 10);
     ros::Rate r(sample_rate);
 
@@ -64,11 +65,11 @@ int main(int argc, char **argv){
         ros::Time now = ros::Time::now();
 
         sensor_msgs::Imu imu_msg;
-        sensor_msgs::Imu imu_msg2;
+        geometry_msgs::Vector3Stamped imu_euler_msg;
         imu_msg.header.stamp = now;
         imu_msg.header.frame_id = MPU_FRAMEID;
-        imu_msg2.header.stamp = now;
-        imu_msg2.header.frame_id = MPU_FRAMEID;
+        imu_euler_msg.header.stamp = now;
+        imu_euler_msg.header.frame_id = MPU_FRAMEID;
         geometry_msgs::Vector3Stamped mag_msg;
         mag_msg.header.stamp = now;
         mag_msg.header.frame_id = MPU_FRAMEID;
@@ -80,11 +81,11 @@ int main(int argc, char **argv){
              imu_msg.orientation.z=mpu.fusedQuat[QUAT_Z];
              imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];
 
-             tf::Quaternion quat =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_X],mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_Z]);
-             imu_msg2.orientation.x=quat.x();
-             imu_msg2.orientation.y=quat.y();
-             imu_msg2.orientation.z=quat.z();
-             imu_msg2.orientation.w=quat.w();
+             //tf::Quaternion quat =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_X],mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_Z]);
+             imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
+             imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
+             imu_euler_msg.vector.z=mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
+
 
              //TODO: verify conversion
 
@@ -112,7 +113,7 @@ int main(int argc, char **argv){
              mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
 
              imu_pub.publish(imu_msg);
-             imu_pub2.publish(imu_msg2);
+             imu_euler_pub.publish(imu_euler_msg);
              mag_pub.publish(mag_msg);
 
 
