@@ -110,10 +110,10 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 
-	//if (mpu_set_compass_sample_rate(sample_rate)) {
-	//	printf("\nmpu_set_compass_sample_rate() failed\n");
-	//	return -1;
-	//}
+    if (mpu_set_compass_sample_rate(sample_rate)) {
+        printf("\nmpu_set_compass_sample_rate() failed\n");
+        return -1;
+    }
 
 	printf(".");
 	fflush(stdout);
