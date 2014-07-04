@@ -2786,7 +2786,6 @@ int mpu_get_compass_reg(short *data, uint32_t *timestamp)
         get_ms(timestamp);
     return 0;
 #elif defined HMC5883L_SECONDARY
-    //TODO:implement read
     unsigned char tmp[9];
 
     if (!(st.chip_cfg.sensors & INV_XYZ_COMPASS))

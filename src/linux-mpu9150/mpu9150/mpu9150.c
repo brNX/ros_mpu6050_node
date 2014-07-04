@@ -302,6 +302,7 @@ int data_ready()
 void calibrate_data(mpudata_t *mpu)
 {
 	if (use_mag_cal) {
+      #ifdef AK89xx_SECONDARY
       mpu->calibratedMag[VEC3_Y] = -(short)(((int32_t)(mpu->rawMag[VEC3_X] - mag_cal_data.offset[VEC3_X])
 			* (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_X]);
 
@@ -310,11 +311,27 @@ void calibrate_data(mpudata_t *mpu)
 
       mpu->calibratedMag[VEC3_Z] = (short)(((int32_t)(mpu->rawMag[VEC3_Z] - mag_cal_data.offset[VEC3_Z])
 			* (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_Z]);
+      #elif defined HMC5883L_SECONDARY
+        mpu->calibratedMag[VEC3_Y] = -(short)(((int32_t)(mpu->rawMag[VEC3_Y] - mag_cal_data.offset[VEC3_Y])
+              * (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_Y]);
+
+        mpu->calibratedMag[VEC3_X] = (short)(((int32_t)(mpu->rawMag[VEC3_X] - mag_cal_data.offset[VEC3_X])
+              * (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_X]);
+
+        mpu->calibratedMag[VEC3_Z] = (short)(((int32_t)(mpu->rawMag[VEC3_Z] - mag_cal_data.offset[VEC3_Z])
+              * (int32_t)MAG_SENSOR_RANGE) / (int32_t)mag_cal_data.range[VEC3_Z]);
+      #endif
 	}
 	else {
+         #ifdef AK89xx_SECONDARY
 		mpu->calibratedMag[VEC3_Y] = -mpu->rawMag[VEC3_X];
 		mpu->calibratedMag[VEC3_X] = mpu->rawMag[VEC3_Y];
 		mpu->calibratedMag[VEC3_Z] = mpu->rawMag[VEC3_Z];
+        #elif defined HMC5883L_SECONDARY
+        mpu->calibratedMag[VEC3_Y] = -mpu->rawMag[VEC3_Y];
+        mpu->calibratedMag[VEC3_X] = mpu->rawMag[VEC3_X];
+        mpu->calibratedMag[VEC3_Z] = mpu->rawMag[VEC3_Z];
+        #endif
 	}
 
 	if (use_accel_cal) {
