@@ -4,10 +4,10 @@
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Vector3Stamped.h>
-//#include <tf/transform_datatypes.h>
+#include <tf/transform_datatypes.h>
 
 
-#define MPU_FRAMEID "/imu"
+#define MPU_FRAMEID "base_imu"
 
 bool calibrate;
 ros::Publisher imu_calib_pub;
@@ -39,6 +39,8 @@ int main(int argc, char **argv){
     pn.param<int>("i2c_bus",i2c_bus,0);
     int yaw_mix_factor;
     pn.param<int>("yaw_mix_factor",yaw_mix_factor,DEFAULT_YAW_MIX_FACTOR);
+    std::string frame_id;
+    pn.param<std::string>("frame_id",frame_id,MPU_FRAMEID);
 
     ROS_INFO("setting up MPU60X0...");
 
@@ -76,15 +78,33 @@ int main(int argc, char **argv){
 
          if (mpu9150_read(&mpu) == 0) {
 
-             imu_msg.orientation.x=mpu.fusedQuat[QUAT_X];
+             /*imu_msg.orientation.x=mpu.fusedQuat[QUAT_X];
              imu_msg.orientation.y=mpu.fusedQuat[QUAT_Y];
              imu_msg.orientation.z=mpu.fusedQuat[QUAT_Z];
-             imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];
+             imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];*/
 
-             //tf::Quaternion quat =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_X],mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_Z]);
-             imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
-             imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
-             imu_euler_msg.vector.z=mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
+             tf::Quaternion quat2 =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_X],-mpu.fusedEuler[VEC3_Z]);
+             imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
+             imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
+             imu_euler_msg.vector.z=-mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
+			 
+			imu_msg.orientation.x=quat2.getX();
+			imu_msg.orientation.y=quat2.getY();
+			imu_msg.orientation.z=quat2.getZ();
+			imu_msg.orientation.w=quat2.getW();
+			 
+			 
+		/*double roll, pitch , yaw;
+        tf::Quaternion q(msg->orientation.x,msg->orientation.y,msg->orientation.z,msg->orientation.w);
+        tf::Matrix3x3 m(q);
+        m.getRPY(roll, pitch, yaw);
+        yaw +=yaw_offset;
+        tf::Quaternion q_new;
+        q_new.setRPY(roll,pitch,yaw);
+        imu_corrected.orientation.x=q_new.getX();
+        imu_corrected.orientation.y=q_new.getY();
+        imu_corrected.orientation.z=q_new.getZ();
+        imu_corrected.orientation.w=q_new.getW();*/
 
 
              //TODO: verify conversion
@@ -92,12 +112,12 @@ int main(int argc, char **argv){
              float ax_f, ay_f, az_f;
              float gx_f, gy_f, gz_f;
 
-             ax_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
-             ay_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
+             ax_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
+             ay_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
              az_f =((float) mpu.calibratedAccel[2]) / (16384 / 9.807); // 2g scale in m/s^2
 
-             gx_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
-             gy_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
+             gx_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
+             gy_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
              gz_f=((float) mpu.rawGyro[2]) / 16.4f; // for degrees/s 2000 scale
 
              imu_msg.linear_acceleration.x=ax_f;
@@ -108,8 +128,8 @@ int main(int argc, char **argv){
              imu_msg.angular_velocity.y=gy_f;
              imu_msg.angular_velocity.z=gz_f;
 
-             mag_msg.vector.x=mpu.calibratedMag[VEC3_X];
-             mag_msg.vector.y=mpu.calibratedMag[VEC3_Y];
+             mag_msg.vector.x=mpu.calibratedMag[VEC3_Y];
+             mag_msg.vector.y=mpu.calibratedMag[VEC3_X];
              mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
 
              imu_pub.publish(imu_msg);

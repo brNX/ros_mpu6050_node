@@ -52,7 +52,7 @@ void mpu9150_set_debug(int on)
 
 int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 {
-	signed char gyro_orientation[9] = { 1, 0, 0,
+	signed char gyro_orientation[9] = { 1, 0, 0, //YXZ
                                         0, 1, 0,
                                         0, 0, 1 };
 
@@ -102,7 +102,7 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 	
-	if (mpu_set_sample_rate(sample_rate)) {
+	if (mpu_set_sample_rate(200)) {
 		printf("\nmpu_set_sample_rate() failed\n");
 		return -1;
 	}
@@ -110,7 +110,7 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 	printf(".");
 	fflush(stdout);
 
-    if (mpu_set_compass_sample_rate(sample_rate)) {
+    if (mpu_set_compass_sample_rate(50)) {
         printf("\nmpu_set_compass_sample_rate() failed\n");
         return -1;
     }
@@ -328,8 +328,8 @@ void calibrate_data(mpudata_t *mpu)
 		mpu->calibratedMag[VEC3_X] = mpu->rawMag[VEC3_Y];
 		mpu->calibratedMag[VEC3_Z] = mpu->rawMag[VEC3_Z];
         #elif defined HMC5883L_SECONDARY
-        mpu->calibratedMag[VEC3_Y] = -mpu->rawMag[VEC3_Y];
-        mpu->calibratedMag[VEC3_X] = mpu->rawMag[VEC3_X];
+        mpu->calibratedMag[VEC3_Y] = mpu->rawMag[VEC3_Y];
+        mpu->calibratedMag[VEC3_X] = -mpu->rawMag[VEC3_X];
         mpu->calibratedMag[VEC3_Z] = mpu->rawMag[VEC3_Z];
         #endif
 	}
