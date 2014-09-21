@@ -112,15 +112,15 @@ int main(int argc, char **argv){
             float ax_f, ay_f, az_f;
             float gx_f, gy_f, gz_f;
 
-            ax_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
-            ay_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
+            ax_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
+            ay_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
             az_f =((float) mpu.calibratedAccel[2]) / (16384 / 9.807); // 2g scale in m/s^2
 
-            gx_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
-            gy_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
+            gx_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
+            gy_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
             gz_f=((float) mpu.rawGyro[2]) / 16.4f; // for degrees/s 2000 scale
 
-            imu_msg.linear_acceleration.x=ax_f;
+            imu_msg.linear_acceleration.x=-ax_f;
             imu_msg.linear_acceleration.y=ay_f;
             imu_msg.linear_acceleration.z=az_f;
 
@@ -128,8 +128,8 @@ int main(int argc, char **argv){
             imu_msg.angular_velocity.y=gy_f;
             imu_msg.angular_velocity.z=gz_f;
 
-            mag_msg.vector.x=mpu.calibratedMag[VEC3_Y];
-            mag_msg.vector.y=mpu.calibratedMag[VEC3_X];
+            mag_msg.vector.x=mpu.calibratedMag[VEC3_X];
+            mag_msg.vector.y=mpu.calibratedMag[VEC3_Y];
             mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
 
             imu_pub.publish(imu_msg);
