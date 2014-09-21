@@ -41,6 +41,19 @@ int main(int argc, char **argv){
     pn.param<int>("yaw_mix_factor",yaw_mix_factor,DEFAULT_YAW_MIX_FACTOR);
     std::string frame_id;
     pn.param<std::string>("frame_id",frame_id,MPU_FRAMEID);
+    
+    /*Covariance*/
+    double angular_velocity_covariance,pitch_roll_covariance,yaw_covariance,linear_acceleration_covariance,linear_acceleration_stdev_,angular_velocity_stdev_,yaw_stdev_,pitch_roll_stdev_;
+    
+    pn.param("linear_acceleration_stdev", linear_acceleration_stdev_, (400 / 1000000.0) * 9.807 ); // NOISE PERFORMANCE: Power Spectral Density @10Hz, AFS_SEL=0 & ODR=1kHz 400 ug/√Hz (probably wrong)
+    pn.param("angular_velocity_stdev", angular_velocity_stdev_, 0.05 * (M_PI / 180.0)); // Total RMS Noise: DLPFCFG=2 (100Hz) 0.05 º/s-rms (probably lower (?) @ 42Hz)
+    pn.param("pitch_roll_stdev", pitch_roll_stdev_, 1.0 * (M_PI / 180.0));  // 1 degree for pitch and roll
+    pn.param("yaw_stdev", yaw_stdev_, 5.0 * (M_PI / 180.0));  // 5 degrees for yaw
+
+    angular_velocity_covariance = angular_velocity_stdev_ * angular_velocity_stdev_;
+    linear_acceleration_covariance = linear_acceleration_stdev_ * linear_acceleration_stdev_;
+    pitch_roll_covariance = pitch_roll_stdev_ * pitch_roll_stdev_;
+    yaw_covariance = yaw_stdev_ * yaw_stdev_;
 
     ROS_INFO("setting up MPU60X0...");
 
@@ -92,6 +105,18 @@ int main(int argc, char **argv){
             imu_msg.orientation.y=quat2.getY();
             imu_msg.orientation.z=quat2.getZ();
             imu_msg.orientation.w=quat2.getW();
+	    
+	    imu_msg.linear_acceleration_covariance[0] = linear_acceleration_covariance;
+	    imu_msg.linear_acceleration_covariance[4] = linear_acceleration_covariance;
+	    imu_msg.linear_acceleration_covariance[8] = linear_acceleration_covariance;
+
+	    imu_msg.angular_velocity_covariance[0] = angular_velocity_covariance;
+	    imu_msg.angular_velocity_covariance[4] = angular_velocity_covariance;
+	    imu_msg.angular_velocity_covariance[8] = angular_velocity_covariance;
+    
+	    imu_msg.orientation_covariance[0] = pitch_roll_covariance;
+	    imu_msg.orientation_covariance[4] = pitch_roll_covariance;
+	    imu_msg.orientation_covariance[8] = yaw_covariance;
 
             //TODO: check if needed
             /*double roll, pitch , yaw;
