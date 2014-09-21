@@ -69,32 +69,32 @@ int main(int argc, char **argv){
         sensor_msgs::Imu imu_msg;
         geometry_msgs::Vector3Stamped imu_euler_msg;
         imu_msg.header.stamp = now;
-        imu_msg.header.frame_id = MPU_FRAMEID;
+        imu_msg.header.frame_id = frame_id;
         imu_euler_msg.header.stamp = now;
-        imu_euler_msg.header.frame_id = MPU_FRAMEID;
+        imu_euler_msg.header.frame_id = frame_id;
         geometry_msgs::Vector3Stamped mag_msg;
         mag_msg.header.stamp = now;
-        mag_msg.header.frame_id = MPU_FRAMEID;
+        mag_msg.header.frame_id = frame_id;
 
-         if (mpu9150_read(&mpu) == 0) {
+        if (mpu9150_read(&mpu) == 0) {
 
-             /*imu_msg.orientation.x=mpu.fusedQuat[QUAT_X];
+            /*imu_msg.orientation.x=mpu.fusedQuat[QUAT_X];
              imu_msg.orientation.y=mpu.fusedQuat[QUAT_Y];
              imu_msg.orientation.z=mpu.fusedQuat[QUAT_Z];
              imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];*/
 
-             tf::Quaternion quat2 =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_X],-mpu.fusedEuler[VEC3_Z]);
-             imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
-             imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
-             imu_euler_msg.vector.z=-mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
-			 
-			imu_msg.orientation.x=quat2.getX();
-			imu_msg.orientation.y=quat2.getY();
-			imu_msg.orientation.z=quat2.getZ();
-			imu_msg.orientation.w=quat2.getW();
-			 
-			 
-		/*double roll, pitch , yaw;
+            tf::Quaternion quat2 =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_X],-mpu.fusedEuler[VEC3_Z]);
+            imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
+            imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
+            imu_euler_msg.vector.z=-mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
+
+            imu_msg.orientation.x=quat2.getX();
+            imu_msg.orientation.y=quat2.getY();
+            imu_msg.orientation.z=quat2.getZ();
+            imu_msg.orientation.w=quat2.getW();
+
+            //TODO: check if needed
+            /*double roll, pitch , yaw;
         tf::Quaternion q(msg->orientation.x,msg->orientation.y,msg->orientation.z,msg->orientation.w);
         tf::Matrix3x3 m(q);
         m.getRPY(roll, pitch, yaw);
@@ -107,74 +107,39 @@ int main(int argc, char **argv){
         imu_corrected.orientation.w=q_new.getW();*/
 
 
-             //TODO: verify conversion
+            //TODO: verify conversion
 
-             float ax_f, ay_f, az_f;
-             float gx_f, gy_f, gz_f;
+            float ax_f, ay_f, az_f;
+            float gx_f, gy_f, gz_f;
 
-             ax_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
-             ay_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
-             az_f =((float) mpu.calibratedAccel[2]) / (16384 / 9.807); // 2g scale in m/s^2
+            ax_f =((float) mpu.calibratedAccel[1]) / (16384 / 9.807); // 2g scale in m/s^2
+            ay_f =((float) mpu.calibratedAccel[0]) / (16384 / 9.807); // 2g scale in m/s^2
+            az_f =((float) mpu.calibratedAccel[2]) / (16384 / 9.807); // 2g scale in m/s^2
 
-             gx_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
-             gy_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
-             gz_f=((float) mpu.rawGyro[2]) / 16.4f; // for degrees/s 2000 scale
+            gx_f=((float) mpu.rawGyro[1]) / 16.4f; // for degrees/s 2000 scale
+            gy_f=((float) mpu.rawGyro[0]) / 16.4f; // for degrees/s 2000 scale
+            gz_f=((float) mpu.rawGyro[2]) / 16.4f; // for degrees/s 2000 scale
 
-             imu_msg.linear_acceleration.x=ax_f;
-             imu_msg.linear_acceleration.y=ay_f;
-             imu_msg.linear_acceleration.z=az_f;
+            imu_msg.linear_acceleration.x=ax_f;
+            imu_msg.linear_acceleration.y=ay_f;
+            imu_msg.linear_acceleration.z=az_f;
 
-             imu_msg.angular_velocity.x=gx_f;
-             imu_msg.angular_velocity.y=gy_f;
-             imu_msg.angular_velocity.z=gz_f;
+            imu_msg.angular_velocity.x=gx_f;
+            imu_msg.angular_velocity.y=gy_f;
+            imu_msg.angular_velocity.z=gz_f;
 
-             mag_msg.vector.x=mpu.calibratedMag[VEC3_Y];
-             mag_msg.vector.y=mpu.calibratedMag[VEC3_X];
-             mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
+            mag_msg.vector.x=mpu.calibratedMag[VEC3_Y];
+            mag_msg.vector.y=mpu.calibratedMag[VEC3_X];
+            mag_msg.vector.z=mpu.calibratedMag[VEC3_Z];
 
-             imu_pub.publish(imu_msg);
-             imu_euler_pub.publish(imu_euler_msg);
-             mag_pub.publish(mag_msg);
-
-
-         }else{
-             ROS_WARN("MPU6050 - %s - MPU6050 read failed",__FUNCTION__);
-         }
+            imu_pub.publish(imu_msg);
+            imu_euler_pub.publish(imu_euler_msg);
+            mag_pub.publish(mag_msg);
 
 
-        /*accelgyro->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
-        // remove offsets from the gyroscope
-        gx -=  gyro_off_x;
-        gy -=  gyro_off_y;
-        gz -=  gyro_off_z;
-
-        float ax_f, ay_f, az_f;
-        float gx_f, gy_f, gz_f;
-
-        //TODO: verify this
-        gx_f=((float) gx) / (131 * 57.3); // for radian/s 250 scale
-        gy_f=((float) gy) / (131 * 57.3); // for radian/s 250 scale
-        gz_f=((float) gz) / (131 * 57.3); // for radian/s 250 scale
-
-        ax_f =((float) ax) / (16384 / 9.807); // 2g scale in m/s^2
-        ay_f =((float) ay) / (16384 / 9.807); // 2g scale in m/s^2
-        az_f =((float) az) / (16384 / 9.807); // 2g scale in m/s^2
-
-
-        //values[i] = ((float) accgyroval[i]) / 16.4f; // NOTE: this depends on the sensitivity chosen
-
-
-        imu_msg.linear_acceleration.x=ax_f;
-        imu_msg.linear_acceleration.y=ay_f;
-        imu_msg.linear_acceleration.z=az_f;
-
-        imu_msg.angular_velocity.x=gx_f;
-        imu_msg.angular_velocity.y=gy_f;
-        imu_msg.angular_velocity.z=gz_f;
-
-        imu_pub.publish(imu_msg);*/
-
+        }else{
+            ROS_WARN("MPU6050 - %s - MPU6050 read failed",__FUNCTION__);
+        }
 
         ros::spinOnce();
         r.sleep();
