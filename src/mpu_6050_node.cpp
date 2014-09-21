@@ -83,9 +83,9 @@ int main(int argc, char **argv){
              imu_msg.orientation.z=mpu.fusedQuat[QUAT_Z];
              imu_msg.orientation.w=mpu.fusedQuat[QUAT_W];*/
 
-            tf::Quaternion quat2 =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_Y],mpu.fusedEuler[VEC3_X],-mpu.fusedEuler[VEC3_Z]);
-            imu_euler_msg.vector.y=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
-            imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
+            tf::Quaternion quat2 =tf::createQuaternionFromRPY(mpu.fusedEuler[VEC3_X],-mpu.fusedEuler[VEC3_Y],-mpu.fusedEuler[VEC3_Z]);
+            imu_euler_msg.vector.y=-mpu.fusedEuler[VEC3_Y]*RAD_TO_DEGREE;
+            imu_euler_msg.vector.x=mpu.fusedEuler[VEC3_X]*RAD_TO_DEGREE;
             imu_euler_msg.vector.z=-mpu.fusedEuler[VEC3_Z]*RAD_TO_DEGREE;
 
             imu_msg.orientation.x=quat2.getX();
